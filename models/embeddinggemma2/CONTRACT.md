@@ -40,6 +40,36 @@ The token lookup is separate because int32 ids cannot run on the Neural Engine.
 The caller (Swift) does: prompt prefix, tokenization, bucket choice, padding, L2 normalization
 in fp32, MRL truncation and re-normalization.
 
+### Image functions (fixed budget P = 2520 patches = 280 soft tokens)
+
+| Function | Input | Output |
+|---|---|---|
+| `image_positions_2520` | `x_ids`, `y_ids` int32 [1, P] (patch column / row; 0 for padding) | `pos_embeds` fp16 [1, 768, 1, P] |
+| `embed_image_2520` | `pixel_patches` fp16 [1, 768, 1, P] (pixels 0..1, 3x3-block order), `pos_embeds`, `rope_cos` / `rope_sin` fp16 [1, 64, 1, P], `patch_mask` fp16 [1, P] | `soft_tokens` fp16 [1, 512, 1, 280]; first N real |
+
+Caller steps for one image:
+1. Resize, keeping aspect ratio, to H x W with H, W multiples of 48 and (H/16)(W/16) <= 2520
+   (HF `get_aspect_ratio_preserving_size`, bicubic, antialiased). Pixels / 255, no normalization.
+2. Cut 16x16 patches; each patch flattens as (row, col, channel). Reorder patches so each 3x3
+   block is contiguous, blocks in row-major order. Pad to P with zeros.
+3. RoPE: per patch, angles = (x, y) * inv_freq (theta 100, 16 freqs), laid out [x, x, y, y]
+   (64 values); cos/sin in fp32, then fp16. `patch_mask` 1 for real patches.
+4. Tokens: `<bos> <|image> ` + N x `<|image|>` + ` <image|> <eos>` (N = real patches / 9). Run
+   `embed_tokens_{L}` with image-token ids replaced by 0, overwrite the N image columns of
+   `inputs_embeds` with `soft_tokens[:, :, :, :N]`, then `embed_text_{L}`.
+
+Exact rewrites in the vision path: per-norm prescale; dropped pooler x sqrt(768) (it feeds a
+weightless RMSNorm); 3x3-block patch order so pooling is a static mean of 9 neighbours.
+
+### Placement lessons (vision)
+
+- A function the Neural Engine compiler fails on (`CompilationFailure`) moves **every** function
+  in the asset to the GPU. The first positions function (int32 lookup + clamp/where + fp32 trig)
+  did this. Fix: lookup-only positions function; RoPE and mask computed by the caller.
+- Neural Engine vs GPU on M1 Max for the vision encoder: ~467 ms vs ~280 ms. The Neural Engine
+  is slower here; its value is power and background use.
+- Export trap: tracing with the same example tensor for two inputs makes `torch.export` alias them.
+
 ## Placement findings (2026-10-07, M1 Max, macOS 27.2 beta)
 
 - `ComputePlan` reports every op on the GPU. It loads the model in debug mode, which appears

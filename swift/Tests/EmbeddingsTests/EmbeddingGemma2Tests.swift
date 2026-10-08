@@ -1,4 +1,6 @@
 import CoreAI
+import CoreAIShared
+import CoreGraphics
 import Foundation
 import Testing
 import Tokenizers
@@ -105,5 +107,107 @@ struct EmbeddingGemma2ModelTests {
         let hit = try await embedder.embedDocument("The northern lights are caused by charged particles from the sun.")
         let miss = try await embedder.embedDocument("Photosynthesis converts light energy into chemical energy in plants.")
         #expect(EmbeddingGemma2.cosine(q, hit) > EmbeddingGemma2.cosine(q, miss) + 0.1)
+    }
+}
+
+// MARK: - Images
+
+struct ImageReference: Decodable {
+    struct Item: Decodable {
+        let stem: String
+        let caption: String
+        let num_soft_tokens: Int
+        let embedding: [Float]
+        let caption_embedding: [Float]
+    }
+    let items: [Item]
+
+    static let dir = TextReference.url.deletingLastPathComponent()
+
+    static func load() throws -> ImageReference {
+        try JSONDecoder().decode(ImageReference.self, from: Data(contentsOf: dir.appending(path: "image_reference.json")))
+    }
+
+    static func image(_ name: String) throws -> CGImage {
+        try CGImageUtils.load(from: dir.appending(path: "images/\(name).png"))
+    }
+}
+
+@Suite struct GemmaImageProcessorTests {
+    /// Swift resize vs HF's (torchvision antialiased bicubic) resized pixels, for up- and downscaling.
+    @Test(arguments: ["red_circle", "green_triangle", "yellow_star_tall", "sunset_gradient", "large_pattern"])
+    func resizeMatchesHF(stem: String) throws {
+        let files = try FileManager.default.contentsOfDirectory(atPath: ImageReference.dir.appending(path: "images").path)
+        let hfName = try #require(files.first { $0.hasPrefix("\(stem)__hf_") }).replacingOccurrences(of: ".png", with: "")
+        let (src, w, h) = try GemmaImageProcessor.rgbPixels(ImageReference.image(stem))
+        let (hf, tw, th) = try GemmaImageProcessor.rgbPixels(ImageReference.image(hfName))
+        let target = GemmaImageProcessor.targetSize(height: h, width: w)
+        #expect(target.height == th && target.width == tw)
+        let mine = GemmaImageProcessor.resize(src, width: w, height: h, outWidth: tw, outHeight: th)
+        var maxDiff = 0, off = 0
+        for i in 0..<mine.count {
+            let d = abs(Int(mine[i]) - Int(hf[i]))
+            maxDiff = max(maxDiff, d)
+            if d > 0 { off += 1 }
+        }
+        #expect(maxDiff <= 2, "max pixel difference \(maxDiff)")
+        #expect(Double(off) / Double(mine.count) < 0.005, "\(off) of \(mine.count) values differ")
+    }
+
+    @Test func blockOrderAndCounts() throws {
+        let inputs = try GemmaImageProcessor.inputs(for: ImageReference.image("green_triangle"))
+        #expect(inputs.softTokenCount == 260)  // HF: 260 soft tokens for 384x256
+        // First block: patches (0,0) (1,0) (2,0) (0,1) ... in x, y.
+        #expect(Array(inputs.xIDs.prefix(9)) == [0, 1, 2, 0, 1, 2, 0, 1, 2])
+        #expect(Array(inputs.yIDs.prefix(9)) == [0, 0, 0, 1, 1, 1, 2, 2, 2])
+        #expect(inputs.patchMask.filter { $0 == 1 }.count == 260 * 9)
+    }
+}
+
+@Suite(.enabled(if: modelURL != nil && tokenizerFolder != nil, "set EMBEDDINGGEMMA2_MODEL to an exported .aimodel"))
+struct EmbeddingGemma2ImageTests {
+    /// Full Swift image path (decode, resize, patches, RoPE, both functions, text encoder) vs fp32 HF.
+    @Test func imageParityWithFP32Reference() async throws {
+        let ref = try ImageReference.load()
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        try #require(await embedder.supportsImages)
+        for item in ref.items {
+            let v = try await embedder.embed(image: ImageReference.image(item.stem))
+            let cos = EmbeddingGemma2.cosine(v, item.embedding)
+            #expect(cos >= 0.999, "cos \(cos) for \(item.stem)")
+        }
+    }
+
+    /// text -> image: each caption ranks its own image first (the fp32 reference gets 7 of 7).
+    @Test func captionFindsItsImage() async throws {
+        let ref = try ImageReference.load()
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        var images: [[Float]] = []
+        for item in ref.items { images.append(try await embedder.embed(image: ImageReference.image(item.stem))) }
+        for (i, item) in ref.items.enumerated() {
+            let q = try await embedder.embed(item.caption)
+            let best = images.indices.max { EmbeddingGemma2.cosine(q, images[$0]) < EmbeddingGemma2.cosine(q, images[$1]) }
+            #expect(best == i, "'\(item.caption)' matched \(ref.items[best!].stem)")
+        }
+    }
+
+    /// image <-> image: a half-size copy of an image is nearest to its original, at 768 and 256 dims.
+    @Test(arguments: [768, 256])
+    func resizedCopyFindsOriginal(dimension: Int) async throws {
+        let ref = try ImageReference.load()
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        let original = try ImageReference.image("stop_sign")
+        let ctx = try #require(CGContext(
+            data: nil, width: original.width / 2, height: original.height / 2, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue))
+        ctx.interpolationQuality = .high
+        ctx.draw(original, in: CGRect(x: 0, y: 0, width: original.width / 2, height: original.height / 2))
+        let copy = try await embedder.embed(image: try #require(ctx.makeImage()), dimension: dimension)
+        var scores: [(String, Float)] = []
+        for item in ref.items {
+            let v = try await embedder.embed(image: ImageReference.image(item.stem), dimension: dimension)
+            scores.append((item.stem, EmbeddingGemma2.cosine(copy, v)))
+        }
+        #expect(scores.max { $0.1 < $1.1 }?.0 == "stop_sign", "\(scores)")
     }
 }

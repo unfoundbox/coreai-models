@@ -231,9 +231,11 @@ class EmbeddingGemma2Text(nn.Module):
         return self.encoder(self.embed(input_ids), attention_mask)
 
 
-def load_scales(path: str | Path) -> dict[str, float]:
-    """Per-norm prescales from the fp16 fix test (``fixtures/text_fp16_fix.json``)."""
-    return json.loads(Path(path).read_text())["scales"]
+def load_scales(path: str | Path, part: str = "text") -> dict[str, float]:
+    """Per-norm prescales: ``fixtures/fp16_scales.json`` (``part`` = "text" or "vision"), or the
+    older text-only ``fixtures/text_fp16_fix.json``."""
+    data = json.loads(Path(path).read_text())
+    return data[part] if part in data else data["scales"]
 
 
 def load_weights(model: EmbeddingGemma2Text, safetensors_path: str | Path) -> EmbeddingGemma2Text:

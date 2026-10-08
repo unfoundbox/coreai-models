@@ -1,13 +1,23 @@
-"""Export the EmbeddingGemma 2 text encoder to a Core AI ``.aimodel`` (fp16, Neural Engine layout).
+"""Export EmbeddingGemma 2 to a Core AI ``.aimodel`` (fp16 encoders in Neural Engine layout).
 
-Two functions per static bucket L:
-    embed_tokens_{L}  input_ids int32 [1, L] (right-padded with 0) -> inputs_embeds fp16 [1, 512, 1, L]
-    embed_text_{L}    inputs_embeds fp16 [1, 512, 1, L], attention_mask fp16 [1, L]
-                      -> embedding fp16 [1, 768], masked mean, NOT L2-normalized (normalize in the caller)
-The token lookup is its own function because int32 ids cannot run on the Neural Engine.
+Text: two functions per static bucket L.
+    embed_tokens_{L}      input_ids int32 [1, L] (right-padded with 0) -> inputs_embeds fp16 [1, 512, 1, L]
+    embed_text_{L}        inputs_embeds fp16 [1, 512, 1, L], attention_mask fp16 [1, L]
+                          -> embedding fp16 [1, 768], masked mean, NOT L2-normalized (normalize in the caller)
+Image: two functions for a fixed budget of P = 2520 patches (280 soft tokens).
+    image_positions_2520  x_ids, y_ids int32 [1, P] (patch column / row; 0 for padding) -> pos_embeds fp16 [1, 768, 1, P]
+    embed_image_2520      pixel_patches fp16 [1, 768, 1, P] (0..1, patches in 3x3-block order), pos_embeds,
+                          rope_cos / rope_sin fp16 [1, 64, 1, P], patch_mask fp16 [1, P] (1 = real, 0 = padding)
+                          -> soft_tokens fp16 [1, 512, 1, 280]; the first N are real
+    The caller computes rope_cos / rope_sin / patch_mask from the patch coordinates in fp32
+    (``embedding_gemma2_vision.rope_and_mask``).
+An image embedding is the text model run on `<bos><|image>` + N image slots + `<image|><eos>`, with the
+slots' inputs_embeds replaced by the soft tokens. Lookups (int32) and RoPE angles (fp32) run apart from
+the fp16 encoders, which target the Neural Engine.
 
-    uv run python export.py                        # buckets 128, 512, 2048
-    USE_OS_COREAI=1 uv run python export.py --check  # + placement summary and parity vs fp32 fixtures
+    uv run python export.py                                   # text 128/512/2048 + image
+    USE_OS_COREAI=1 uv run python export.py --check \\
+        --image-inputs <npz from check_image_model.py --dump-inputs>   # + parity vs fp32 fixtures
 """
 
 import argparse
@@ -28,12 +38,23 @@ from coreai_models.models.ios.embedding_gemma2_text import (
     load_scales,
     load_weights,
 )
+from coreai_models.models.ios.embedding_gemma2_vision import (
+    HEAD_DIM,
+    VisionEncoder,
+    VisionPositions,
+    load_vision_weights,
+    rope_and_mask,
+)
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
 FIX = HERE / "reference" / "fixtures"
+SCALES = FIX / "fp16_scales.json"
 MODEL_ID = "google/embeddinggemma-2"
 REVISION = "914f7f89142e33e77833254d9c9b90c3cef7303b"
+NUM_PATCHES = 2520
+IMAGE_TOKEN_ID = 258880
+VISION_HIDDEN = 768
 
 
 def tokens_fn(seq_len: int) -> str:
@@ -44,11 +65,18 @@ def text_fn(seq_len: int) -> str:
     return f"embed_text_{seq_len}"
 
 
-def build_models(buckets: list[int]) -> tuple[TokenEmbedding, dict[int, TextEncoder]]:
+POSITIONS_FN = f"image_positions_{NUM_PATCHES}"
+IMAGE_FN = f"embed_image_{NUM_PATCHES}"
+
+
+def weights_path() -> str:
+    return hf_hub_download(MODEL_ID, "model.safetensors", revision=REVISION)
+
+
+def build_text(buckets: list[int]) -> tuple[TokenEmbedding, dict[int, TextEncoder]]:
     """One encoder per bucket. Parameters are shared, so the asset stores the weights once."""
-    weights = hf_hub_download(MODEL_ID, "model.safetensors", revision=REVISION)
-    scales = load_scales(FIX / "text_fp16_fix.json")
-    base = load_weights(EmbeddingGemma2Text(buckets[0], scales), weights).eval().half()
+    scales = load_scales(SCALES, "text")
+    base = load_weights(EmbeddingGemma2Text(buckets[0], scales), weights_path()).eval().half()
     encoders = {buckets[0]: base.encoder}
     shared = dict(base.encoder.named_parameters())
     for b in buckets[1:]:
@@ -60,90 +88,151 @@ def build_models(buckets: list[int]) -> tuple[TokenEmbedding, dict[int, TextEnco
     return base.embed, encoders
 
 
-def convert(embed: TokenEmbedding, encoders: dict[int, TextEncoder], debug: bool):
+def build_vision() -> tuple[VisionPositions, VisionEncoder]:
+    positions = VisionPositions()
+    encoder = VisionEncoder(NUM_PATCHES, load_scales(SCALES, "vision"))
+    load_vision_weights(positions, encoder, weights_path())
+    return positions.eval().half(), encoder.eval().half()
+
+
+def convert(text, vision, debug: bool):
     decomp = get_decomp_table()
     converter = TorchConverter(mode=TorchConverter.Mode.DEBUG if debug else TorchConverter.Mode.RELEASE)
+
+    def add(module, example, inputs, outputs, name):
+        t = time.time()
+        ep = torch.export.export(module, example).run_decompositions(decomp)
+        converter.add_exported_program(ep, input_names=inputs, output_names=outputs, entrypoint_name=name)
+        print(f"[export] traced {name} in {time.time() - t:.1f}s")
+
     with torch.no_grad():
-        for b, enc in encoders.items():
-            t = time.time()
-            ids = torch.zeros(1, b, dtype=torch.int32)
-            ep = torch.export.export(embed, (ids,)).run_decompositions(decomp)
-            converter.add_exported_program(ep, input_names=["input_ids"], output_names=["inputs_embeds"],
-                                           entrypoint_name=tokens_fn(b))
-            x = torch.zeros(1, HIDDEN, 1, b, dtype=torch.float16)
-            mask = torch.zeros(1, b, dtype=torch.float16)
-            mask[0, :8] = 1
-            ep = torch.export.export(enc, (x, mask)).run_decompositions(decomp)
-            converter.add_exported_program(ep, input_names=["inputs_embeds", "attention_mask"],
-                                           output_names=["embedding"], entrypoint_name=text_fn(b))
-            print(f"[export] traced bucket {b} in {time.time() - t:.1f}s")
+        if text:
+            embed, encoders = text
+            for b, enc in encoders.items():
+                add(embed, (torch.zeros(1, b, dtype=torch.int32),), ["input_ids"], ["inputs_embeds"], tokens_fn(b))
+                mask = torch.zeros(1, b, dtype=torch.float16)
+                mask[0, :8] = 1
+                add(enc, (torch.zeros(1, HIDDEN, 1, b, dtype=torch.float16), mask),
+                    ["inputs_embeds", "attention_mask"], ["embedding"], text_fn(b))
+        if vision:
+            vpos, venc = vision
+            # Two distinct tensors: passing one tensor twice makes torch.export alias the inputs,
+            # and both lookups then read the same ids.
+            x_ids = torch.zeros(1, NUM_PATCHES, dtype=torch.int32)
+            y_ids = torch.zeros(1, NUM_PATCHES, dtype=torch.int32)
+            add(vpos, (x_ids, y_ids), ["x_ids", "y_ids"], ["pos_embeds"], POSITIONS_FN)
+            f16 = lambda *s: torch.zeros(*s, dtype=torch.float16)  # noqa: E731
+            add(venc, (f16(1, VISION_HIDDEN, 1, NUM_PATCHES), f16(1, VISION_HIDDEN, 1, NUM_PATCHES),
+                       f16(1, HEAD_DIM, 1, NUM_PATCHES), f16(1, HEAD_DIM, 1, NUM_PATCHES), f16(1, NUM_PATCHES)),
+                ["pixel_patches", "pos_embeds", "rope_cos", "rope_sin", "patch_mask"], ["soft_tokens"], IMAGE_FN)
     return converter.to_coreai()
 
 
-async def check(program, asset_path: Path, buckets: list[int]) -> None:
+async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None, compute: str) -> None:
     from coreai.runtime import AIModel, ComputeUnitKind, NDArray, SpecializationOptions
-    from coreai_torch.debugging.compute_plan import ComputePlan
 
-    opts = SpecializationOptions.from_preferred_compute_unit_kind(ComputeUnitKind.neural_engine())
-    plan = await ComputePlan.from_program(program, opts)
-    plan.write_summary(program)
-    from coreai_torch.debugging.utils import _walk_operations
-
-    reasons: dict[str, set[str]] = {}
-    for op in _walk_operations(program):
-        for msg in plan.get_validation_messages(op):
-            reasons.setdefault(str(msg)[:240], set()).add(op.name)
-    print("[check] Neural Engine validation messages:")
-    for msg, ops in sorted(reasons.items(), key=lambda kv: -len(kv[1])):
-        print(f"   {sorted(ops)[:6]} -> {msg}")
-
-    ref = np.load(FIX / "text_reference.npz")
-    ids, lengths, emb32 = ref["input_ids"], ref["lengths"], ref["embeddings"]
+    kinds = {"neural-engine": ComputeUnitKind.neural_engine(), "gpu": ComputeUnitKind.gpu()}
+    opts = SpecializationOptions.from_preferred_compute_unit_kind(kinds[compute]) if compute in kinds \
+        else SpecializationOptions.default()
     t = time.time()
     model = await AIModel.load(asset_path, opts)
-    print(f"[check] loaded + specialized in {time.time() - t:.1f}s; functions {model.function_names}")
-    tok_fns = {b: model.load_function(tokens_fn(b)) for b in buckets}
-    fns = {b: model.load_function(text_fn(b)) for b in buckets}
-    cos = []
-    for i, n in enumerate(lengths):
-        n = int(n)
-        b = next((b for b in buckets if n <= b), None)
-        if b is None:
-            continue
+    print(f"[check] loaded + specialized ({compute}) in {time.time() - t:.1f}s; functions {model.function_names}")
+    names = set(model.function_names)
+    tok_fns = {b: model.load_function(tokens_fn(b)) for b in buckets if tokens_fn(b) in names}
+    txt_fns = {b: model.load_function(text_fn(b)) for b in buckets if text_fn(b) in names}
+
+    async def text_embedding(ids: np.ndarray, soft: np.ndarray | None = None) -> tuple[np.ndarray, int, float]:
+        n = len(ids)
+        b = next(b for b in sorted(txt_fns) if n <= b)
         x = np.zeros((1, b), dtype=np.int32)
-        x[0, :n] = ids[i, :n]
+        x[0, :n] = np.where(ids == IMAGE_TOKEN_ID, 0, ids)
         m = np.zeros((1, b), dtype=np.float16)
         m[0, :n] = 1
-        t = time.time()
-        emb = await tok_fns[b]({"input_ids": NDArray(x)})
-        t1 = time.time()
-        out = await fns[b]({"inputs_embeds": emb["inputs_embeds"], "attention_mask": NDArray(m)})
-        dt, dt_tok = time.time() - t1, t1 - t
-        e = np.asarray(out["embedding"].numpy(), dtype=np.float32)[0]
-        e = e / np.linalg.norm(e)
-        cos.append(float(np.dot(e, emb32[i])))
-        print(f"[check] len {n:5d} bucket {b:5d} cos {cos[-1]:.6f}  tokens {dt_tok * 1000:.1f} ms  encoder {dt * 1000:.1f} ms")
-    print(f"[check] min cos {min(cos):.6f}  mean {np.mean(cos):.6f}  below 0.999: {sum(c < 0.999 for c in cos)}/{len(cos)}")
+        emb = (await tok_fns[b]({"input_ids": NDArray(x)}))["inputs_embeds"]
+        if soft is not None:
+            e = np.array(emb.numpy(), dtype=np.float16)
+            cols = e[0, :, 0]  # (512, L) view
+            cols[:, np.nonzero(ids == IMAGE_TOKEN_ID)[0]] = soft
+            emb = NDArray(np.ascontiguousarray(e))
+        t0 = time.time()
+        out = await txt_fns[b]({"inputs_embeds": emb, "attention_mask": NDArray(m)})
+        v = np.asarray(out["embedding"].numpy(), dtype=np.float32)[0]
+        return v / np.linalg.norm(v), b, time.time() - t0
+
+    if txt_fns:
+        ref = np.load(FIX / "text_reference.npz")
+        cos = []
+        for i, n in enumerate(ref["lengths"]):
+            n = int(n)
+            if n > max(txt_fns):
+                continue
+            v, b, dt = await text_embedding(ref["input_ids"][i, :n])
+            cos.append(float(np.dot(v, ref["embeddings"][i])))
+            print(f"[check] text  len {n:5d} bucket {b:5d} cos {cos[-1]:.6f}  encoder {dt * 1000:.1f} ms")
+        print(f"[check] text  min cos {min(cos):.6f}  below 0.999: {sum(c < 0.999 for c in cos)}/{len(cos)}")
+
+    if image_inputs and POSITIONS_FN in names:
+        pos_fn, img_fn = model.load_function(POSITIONS_FN), model.load_function(IMAGE_FN)
+        ref = np.load(FIX / "image_reference.npz", allow_pickle=True)
+        data = np.load(image_inputs)
+        cos = []
+        for i, stem in enumerate(ref["stems"]):
+            patches = data[f"{stem}__patches"]  # (P, 768) fp16, block order
+            ids = data[f"{stem}__ids"]
+            n_soft = int((ids == IMAGE_TOKEN_ID).sum())
+            positions = data[f"{stem}__positions"]  # (P, 2), -1 = padding
+            xy = np.clip(positions, 0, None).astype(np.int32)
+            p = await pos_fn({"x_ids": NDArray(np.ascontiguousarray(xy[None, :, 0])),
+                              "y_ids": NDArray(np.ascontiguousarray(xy[None, :, 1]))})
+            cos_t, sin_t, mask_t = (t.numpy() for t in rope_and_mask(torch.from_numpy(positions)))
+            t0 = time.time()
+            out = await img_fn({"pixel_patches": NDArray(np.ascontiguousarray(patches.T[None, :, None, :])),
+                                "pos_embeds": p["pos_embeds"], "rope_cos": NDArray(np.ascontiguousarray(cos_t)),
+                                "rope_sin": NDArray(np.ascontiguousarray(sin_t)),
+                                "patch_mask": NDArray(np.ascontiguousarray(mask_t))})
+            dt_img = time.time() - t0
+            soft = np.asarray(out["soft_tokens"].numpy(), dtype=np.float16)[0, :, 0, :n_soft]
+            r = ref["soft_tokens"][i].astype(np.float32)
+            s32 = soft.astype(np.float32).T
+            tok_cos = (s32 * r).sum(1) / (np.linalg.norm(s32, axis=1) * np.linalg.norm(r, axis=1))
+            if not txt_fns:  # image-only asset: soft tokens only
+                print(f"[check] image {stem:18s} soft-token cos min {tok_cos.min():.5f}  vision {dt_img * 1000:.0f} ms")
+                continue
+            v, b, dt_txt = await text_embedding(ids, soft)
+            cos.append(float(np.dot(v, ref["embeddings"][i])))
+            print(f"[check] image {stem:18s} soft-token cos min {tok_cos.min():.5f}  embedding cos {cos[-1]:.6f}  "
+                  f"vision {dt_img * 1000:.0f} ms + text({b}) {dt_txt * 1000:.0f} ms")
+        if cos:
+            print(f"[check] image min cos {min(cos):.6f}  below 0.999: {sum(c < 0.999 for c in cos)}/{len(cos)}")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--buckets", default="128,512,2048")
+    ap.add_argument("--modalities", default="text,image")
     ap.add_argument("--output-dir", type=Path, default=REPO_ROOT / "exports")
-    ap.add_argument("--check", action="store_true", help="placement summary and parity (needs USE_OS_COREAI=1)")
+    ap.add_argument("--name", default="embeddinggemma2_fp16")
+    ap.add_argument("--check", action="store_true", help="parity vs fp32 fixtures (needs USE_OS_COREAI=1)")
+    ap.add_argument("--check-only", type=Path, default=None, help="skip export; check this existing .aimodel")
+    ap.add_argument("--image-inputs", type=Path, default=None, help="npz from check_image_model.py --dump-inputs")
+    ap.add_argument("--compute", default="neural-engine", choices=["neural-engine", "gpu", "default"])
     ap.add_argument("--debug-info", action="store_true")
     args = ap.parse_args()
     buckets = sorted(int(b) for b in args.buckets.split(","))
+    modalities = set(args.modalities.split(","))
 
-    embed, encoders = build_models(buckets)
-    program = convert(embed, encoders, debug=args.debug_info or args.check)
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    path = args.output_dir / f"embeddinggemma2_text_fp16_{'_'.join(map(str, buckets))}.aimodel"
-    program.save_asset(path)
-    size = sum(p.stat().st_size for p in path.rglob("*") if p.is_file()) if path.is_dir() else path.stat().st_size
-    print(f"[export] saved {path} ({size / 2**20:.0f} MiB)")
-    if args.check:
-        asyncio.run(check(program, path, buckets))
+    path = args.check_only
+    if path is None:
+        text = build_text(buckets) if "text" in modalities else None
+        vision = build_vision() if "image" in modalities else None
+        program = convert(text, vision, debug=args.debug_info)
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        path = args.output_dir / f"{args.name}.aimodel"
+        program.save_asset(path)
+        size = sum(p.stat().st_size for p in path.rglob("*") if p.is_file()) if path.is_dir() else path.stat().st_size
+        print(f"[export] saved {path} ({size / 2**20:.0f} MiB)")
+    if args.check or args.check_only:
+        asyncio.run(check(path, buckets, args.image_inputs, args.compute))
 
 
 if __name__ == "__main__":

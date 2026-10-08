@@ -402,6 +402,7 @@ let package = Package(
             name: "EmbeddingsTests",
             dependencies: [
                 "CoreAIEmbeddings",
+                "CoreAIShared",
                 .product(name: "Transformers", package: "swift-transformers"),
             ],
             path: "swift/Tests/EmbeddingsTests"

@@ -1,5 +1,6 @@
 import CoreAI
 import CoreAIShared
+import CoreGraphics
 import Foundation
 import Tokenizers
 
@@ -16,6 +17,9 @@ public actor EmbeddingGemma2 {
     static let bosID = 2
     static let eosID = 1
     static let padID = 0
+    static let imageStartID = 255999  // <|image>
+    static let imageTokenID = 258880  // <|image|>
+    static let imageEndID = 258882  // <image|>
 
     private struct Bucket {
         let length: Int
@@ -23,10 +27,21 @@ public actor EmbeddingGemma2 {
         let encoder: InferenceFunction
         let idsDescriptor: NDArrayDescriptor
         let maskDescriptor: NDArrayDescriptor
+        let embedsDescriptor: NDArrayDescriptor
+    }
+
+    private struct Vision {
+        let positions: InferenceFunction
+        let encoder: InferenceFunction
+        let descriptors: [String: NDArrayDescriptor]
     }
 
     private let tokenizer: any Tokenizer
     private let buckets: [Bucket]
+    private let vision: Vision?
+
+    /// True when the asset has the image functions (`image_positions_2520`, `embed_image_2520`).
+    public var supportsImages: Bool { vision != nil }
 
     /// Longest input in tokens, special tokens included. Longer inputs are truncated.
     public var maxTokens: Int { buckets.last?.length ?? 0 }
@@ -50,15 +65,35 @@ public actor EmbeddingGemma2 {
             guard let tokFn = try model.loadFunction(named: tokName),
                 let encFn = try model.loadFunction(named: encName),
                 case .ndArray(let idsDesc) = model.functionDescriptor(for: tokName)?.inputDescriptor(of: "input_ids"),
-                case .ndArray(let maskDesc) = model.functionDescriptor(for: encName)?.inputDescriptor(of: "attention_mask")
+                case .ndArray(let maskDesc) = model.functionDescriptor(for: encName)?.inputDescriptor(of: "attention_mask"),
+                case .ndArray(let embDesc) = model.functionDescriptor(for: encName)?.inputDescriptor(of: "inputs_embeds")
             else { continue }
             found.append(
-                Bucket(length: length, tokens: tokFn, encoder: encFn, idsDescriptor: idsDesc, maskDescriptor: maskDesc))
+                Bucket(
+                    length: length, tokens: tokFn, encoder: encFn, idsDescriptor: idsDesc, maskDescriptor: maskDesc,
+                    embedsDescriptor: embDesc))
         }
         guard !found.isEmpty else {
             throw EmbeddingError.missingFunctions(modelURL.lastPathComponent)
         }
         self.buckets = found
+
+        let posName = "image_positions_\(GemmaImageProcessor.maxPatches)"
+        let imgName = "embed_image_\(GemmaImageProcessor.maxPatches)"
+        if let posFn = try model.loadFunction(named: posName), let imgFn = try model.loadFunction(named: imgName),
+            let posDesc = model.functionDescriptor(for: posName), let imgDesc = model.functionDescriptor(for: imgName)
+        {
+            var descriptors: [String: NDArrayDescriptor] = [:]
+            for name in ["x_ids", "y_ids"] {
+                if case .ndArray(let d) = posDesc.inputDescriptor(of: name) { descriptors[name] = d }
+            }
+            for name in ["pixel_patches", "rope_cos", "rope_sin", "patch_mask"] {
+                if case .ndArray(let d) = imgDesc.inputDescriptor(of: name) { descriptors[name] = d }
+            }
+            self.vision = descriptors.count == 6 ? Vision(positions: posFn, encoder: imgFn, descriptors: descriptors) : nil
+        } else {
+            self.vision = nil
+        }
     }
 
     // MARK: Tokenization
@@ -92,6 +127,15 @@ public actor EmbeddingGemma2 {
 
     /// L2-normalized embedding of pre-tokenized ids (special tokens included).
     public func embed(tokenIDs: [Int], dimension: Int = fullDimension) async throws -> [Float] {
+        try await embed(tokenIDs: tokenIDs, dimension: dimension, editEmbeddings: nil)
+    }
+
+    /// Core text path. `editEmbeddings` may overwrite columns of the channel-major (512, L)
+    /// `inputs_embeds` before the encoder runs (used to place image soft tokens).
+    private func embed(
+        tokenIDs: [Int], dimension: Int,
+        editEmbeddings: ((inout [Float16], Int) -> Void)?
+    ) async throws -> [Float] {
         guard Self.supportedDimensions.contains(dimension) else {
             throw EmbeddingError.unsupportedDimension(dimension)
         }
@@ -102,10 +146,19 @@ public actor EmbeddingGemma2 {
         let length = bucket.length
 
         var idsArray = NDArray(descriptor: bucket.idsDescriptor)
-        fillNDArray(&idsArray, as: Int32.self, count: length) { $0 < ids.count ? Int32(ids[$0]) : Int32(Self.padID) }
+        fillNDArray(&idsArray, as: Int32.self, count: length) {
+            guard $0 < ids.count else { return Int32(Self.padID) }
+            return ids[$0] == Self.imageTokenID ? Int32(Self.padID) : Int32(ids[$0])  // HF: image slots use pad
+        }
         var tokOut = try await bucket.tokens.run(inputs: ["input_ids": idsArray])
-        guard let inputsEmbeds = tokOut.remove("inputs_embeds")?.ndArray else {
+        guard var inputsEmbeds = tokOut.remove("inputs_embeds")?.ndArray else {
             throw EmbeddingError.missingOutput("inputs_embeds")
+        }
+        if let editEmbeddings {
+            var values = readNDArray(inputsEmbeds, as: Float16.self, count: inputsEmbeds.shape.reduce(1, *))
+            editEmbeddings(&values, length)
+            inputsEmbeds = NDArray(descriptor: bucket.embedsDescriptor)
+            fillNDArray(&inputsEmbeds, as: Float16.self, count: values.count) { values[$0] }
         }
 
         var maskArray = NDArray(descriptor: bucket.maskDescriptor)
@@ -115,6 +168,55 @@ public actor EmbeddingGemma2 {
             throw EmbeddingError.missingOutput("embedding")
         }
         return Self.matryoshka(flattenAsFloat(pooled), dimension: dimension)
+    }
+
+    // MARK: Images
+
+    /// L2-normalized embedding of an image (no text prefix), truncated to `dimension`.
+    public func embed(image: CGImage, dimension: Int = fullDimension) async throws -> [Float] {
+        try await embed(imageInputs: GemmaImageProcessor.inputs(for: image), dimension: dimension)
+    }
+
+    /// Same as `embed(image:)`, from a file (PNG, JPEG, HEIC, ...).
+    public func embed(imageAt url: URL, dimension: Int = fullDimension) async throws -> [Float] {
+        try await embed(image: CGImageUtils.load(from: url), dimension: dimension)
+    }
+
+    /// Image embedding from already-preprocessed inputs.
+    public func embed(imageInputs inputs: GemmaImageInputs, dimension: Int = fullDimension) async throws -> [Float] {
+        guard let vision else { throw EmbeddingError.imagesUnsupported }
+        guard Self.supportedDimensions.contains(dimension) else { throw EmbeddingError.unsupportedDimension(dimension) }
+        let d = vision.descriptors
+
+        func array<T: BitwiseCopyable>(_ name: String, _ values: [T]) -> NDArray {
+            var a = NDArray(descriptor: d[name]!)
+            fillNDArray(&a, as: T.self, count: values.count) { values[$0] }
+            return a
+        }
+        var posOut = try await vision.positions.run(inputs: ["x_ids": array("x_ids", inputs.xIDs), "y_ids": array("y_ids", inputs.yIDs)])
+        guard let posEmbeds = posOut.remove("pos_embeds")?.ndArray else { throw EmbeddingError.missingOutput("pos_embeds") }
+        var imgOut = try await vision.encoder.run(inputs: [
+            "pixel_patches": array("pixel_patches", inputs.pixelPatches),
+            "pos_embeds": posEmbeds,
+            "rope_cos": array("rope_cos", inputs.ropeCos),
+            "rope_sin": array("rope_sin", inputs.ropeSin),
+            "patch_mask": array("patch_mask", inputs.patchMask),
+        ])
+        guard let softArray = imgOut.remove("soft_tokens")?.ndArray else { throw EmbeddingError.missingOutput("soft_tokens") }
+
+        // Soft tokens: (1, 512, 1, 280), channel-major. Keep the first N per channel.
+        let n = inputs.softTokenCount
+        let slots = softArray.shape[3]
+        let soft = readNDArray(softArray, as: Float16.self, count: softArray.shape.reduce(1, *))
+
+        let ids = [Self.bosID, Self.imageStartID] + Array(repeating: Self.imageTokenID, count: n) + [Self.imageEndID, Self.eosID]
+        return try await embed(tokenIDs: ids, dimension: dimension) { embeds, length in
+            // Image slots start at column 2.
+            let channels = embeds.count / length
+            for c in 0..<channels {
+                for j in 0..<n { embeds[c * length + 2 + j] = soft[c * slots + j] }
+            }
+        }
     }
 
     // MARK: Vector math
@@ -193,6 +295,8 @@ public enum EmbeddingError: Error, CustomStringConvertible {
     case missingOutput(String)
     case unsupportedDimension(Int)
     case inputTooLong(Int, Int)
+    case imagesUnsupported
+    case imageDecodingFailed
 
     public var description: String {
         switch self {
@@ -200,6 +304,8 @@ public enum EmbeddingError: Error, CustomStringConvertible {
         case .missingOutput(let name): "the model did not return '\(name)'"
         case .unsupportedDimension(let d): "dimension \(d) is not one of \(EmbeddingGemma2.supportedDimensions)"
         case .inputTooLong(let n, let max): "\(n) tokens exceed the largest bucket (\(max))"
+        case .imagesUnsupported: "this .aimodel has no image functions (export with --modalities text,image)"
+        case .imageDecodingFailed: "could not read the image pixels"
         }
     }
 }

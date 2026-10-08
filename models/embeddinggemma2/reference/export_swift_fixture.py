@@ -18,3 +18,16 @@ for i, n in enumerate(r["lengths"]):
     })
 (FIX / "text_reference.json").write_text(json.dumps({"max_tokens": 2048, "items": items}))
 print(f"wrote {len(items)} items")
+
+img = np.load(FIX / "image_reference.npz", allow_pickle=True)
+images = []
+for i, stem in enumerate(img["stems"]):
+    images.append({
+        "stem": str(stem),
+        "caption": str(img["captions"][i]),
+        "num_soft_tokens": int(img["num_soft_tokens"][i]),
+        "embedding": [round(float(x), 7) for x in img["embeddings"][i]],
+        "caption_embedding": [round(float(x), 7) for x in img["query_embeddings"][i]],
+    })
+(FIX / "image_reference.json").write_text(json.dumps({"items": images}))
+print(f"wrote {len(images)} image items")

@@ -8,7 +8,7 @@ struct EmbeddingGemmaCLI: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "embedding-gemma",
         abstract: "Text embeddings and semantic search with an EmbeddingGemma 2 .aimodel.",
-        subcommands: [Embed.self, Search.self]
+        subcommands: [Embed.self, Search.self, ImageSearch.self]
     )
 }
 
@@ -54,12 +54,22 @@ struct Embed: AsyncParsableCommand {
     @Option(name: .long, help: "Task prefix: \(EmbeddingTask.allCases.map(\.rawValue).joined(separator: ", ")).")
     var task: String = "none"
 
+    @Option(name: .long, help: "Image file to embed (repeatable).")
+    var image: [String] = []
+
     @Argument(help: "Texts to embed.")
-    var texts: [String]
+    var texts: [String] = []
 
     func run() async throws {
         guard let task = EmbeddingTask(rawValue: task) else { throw ValidationError("unknown --task \(task)") }
         let embedder = try await options.load()
+        for path in image {
+            let start = ContinuousClock.now
+            let vector = try await embedder.embed(imageAt: URL(filePath: path), dimension: options.dim)
+            let elapsed = ContinuousClock.now - start
+            let values = vector.map { String(format: "%.6f", $0) }.joined(separator: ",")
+            print("{\"image\":\(jsonString(path)),\"dim\":\(vector.count),\"ms\":\(milliseconds(elapsed)),\"embedding\":[\(values)]}")
+        }
         for text in texts {
             let start = ContinuousClock.now
             let vector = try await embedder.embed(text, task: task, dimension: options.dim)
@@ -102,6 +112,40 @@ struct Search: AsyncParsableCommand {
         print("query: \(query)   (\(lines.count) docs, dim \(options.dim), \(milliseconds(elapsed)) ms total)")
         for (rank, hit) in ranked.prefix(top).enumerated() {
             print(String(format: "%2d. %.4f  ", rank + 1, hit.score) + lines[hit.index].prefix(100))
+        }
+    }
+}
+
+struct ImageSearch: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "image-search", abstract: "Rank the images in a folder against a text query.")
+
+    @OptionGroup var options: ModelOptions
+
+    @Option(name: .long, help: "Query text.")
+    var query: String
+
+    @Option(name: .long, help: "Folder of images (png, jpg, jpeg, heic).")
+    var images: String
+
+    @Option(name: .long, help: "Number of results.")
+    var top: Int = 5
+
+    func run() async throws {
+        let folder = URL(filePath: images)
+        let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .filter { ["png", "jpg", "jpeg", "heic"].contains($0.pathExtension.lowercased()) }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        let embedder = try await options.load()
+        let start = ContinuousClock.now
+        var vectors: [[Float]] = []
+        for file in files { vectors.append(try await embedder.embed(imageAt: file, dimension: options.dim)) }
+        let q = try await embedder.embed(query, task: .none, dimension: options.dim)
+        let elapsed = ContinuousClock.now - start
+        let ranked = vectors.enumerated().map { ($0.offset, EmbeddingGemma2.cosine(q, $0.element)) }.sorted { $0.1 > $1.1 }
+        print("query: \(query)   (\(files.count) images, dim \(options.dim), \(milliseconds(elapsed)) ms total)")
+        for (rank, hit) in ranked.prefix(top).enumerated() {
+            print(String(format: "%2d. %.4f  ", rank + 1, hit.1) + files[hit.0].lastPathComponent)
         }
     }
 }
