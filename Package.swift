@@ -46,6 +46,10 @@ let package = Package(
             targets: ["CoreAISpeech"]
         ),
         .library(
+            name: "CoreAIEmbeddings",
+            targets: ["CoreAIEmbeddings"]
+        ),
+        .library(
             name: "CoreAIObjectDetection",
             targets: [
                 "CoreAIObjectDetector"
@@ -119,6 +123,19 @@ let package = Package(
                 .product(name: "Transformers", package: "swift-transformers"),
             ],
             path: "swift/Sources/CoreAISpeech",
+            swiftSettings: [
+                .enableUpcomingFeature("MemberImportVisibility")
+            ]
+        ),
+
+        // EmbeddingGemma 2 embeddings (text, image, video, audio)
+        .target(
+            name: "CoreAIEmbeddings",
+            dependencies: [
+                "CoreAIShared",
+                .product(name: "Transformers", package: "swift-transformers"),
+            ],
+            path: "swift/Sources/CoreAIEmbeddings",
             swiftSettings: [
                 .enableUpcomingFeature("MemberImportVisibility")
             ]
@@ -271,6 +288,18 @@ let package = Package(
             ]
         ),
 
+        .executableTarget(
+            name: "embedding-gemma",
+            dependencies: [
+                "CoreAIEmbeddings",
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
+            path: "swift/Sources/Tools/embedding-gemma",
+            swiftSettings: [
+                .enableUpcomingFeature("MemberImportVisibility")
+            ]
+        ),
+
         // Public LLM Benchmark CLI (based on mlx-lm benchmark)
         .executableTarget(
             name: "llm-benchmark",
@@ -368,6 +397,14 @@ let package = Package(
             linkerSettings: [
                 .linkedLibrary("c++")
             ]
+        ),
+        .testTarget(
+            name: "EmbeddingsTests",
+            dependencies: [
+                "CoreAIEmbeddings",
+                .product(name: "Transformers", package: "swift-transformers"),
+            ],
+            path: "swift/Tests/EmbeddingsTests"
         ),
         .testTarget(
             name: "SpeechTests",
