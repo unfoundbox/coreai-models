@@ -8,7 +8,7 @@ struct EmbeddingGemmaCLI: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "embedding-gemma",
         abstract: "Text embeddings and semantic search with an EmbeddingGemma 2 .aimodel.",
-        subcommands: [Embed.self, Search.self, ImageSearch.self]
+        subcommands: [Embed.self, Search.self, MediaSearch.self]
     )
 }
 
@@ -57,6 +57,9 @@ struct Embed: AsyncParsableCommand {
     @Option(name: .long, help: "Image file to embed (repeatable).")
     var image: [String] = []
 
+    @Option(name: .long, help: "Video file to embed (repeatable): 1 frame per second, at most 32 frames.")
+    var video: [String] = []
+
     @Argument(help: "Texts to embed.")
     var texts: [String] = []
 
@@ -69,6 +72,13 @@ struct Embed: AsyncParsableCommand {
             let elapsed = ContinuousClock.now - start
             let values = vector.map { String(format: "%.6f", $0) }.joined(separator: ",")
             print("{\"image\":\(jsonString(path)),\"dim\":\(vector.count),\"ms\":\(milliseconds(elapsed)),\"embedding\":[\(values)]}")
+        }
+        for path in video {
+            let start = ContinuousClock.now
+            let vector = try await embedder.embed(videoAt: URL(filePath: path), dimension: options.dim)
+            let elapsed = ContinuousClock.now - start
+            let values = vector.map { String(format: "%.6f", $0) }.joined(separator: ",")
+            print("{\"video\":\(jsonString(path)),\"dim\":\(vector.count),\"ms\":\(milliseconds(elapsed)),\"embedding\":[\(values)]}")
         }
         for text in texts {
             let start = ContinuousClock.now
@@ -116,34 +126,38 @@ struct Search: AsyncParsableCommand {
     }
 }
 
-struct ImageSearch: AsyncParsableCommand {
+struct MediaSearch: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "image-search", abstract: "Rank the images in a folder against a text query.")
+        commandName: "media-search", abstract: "Rank the images and videos in a folder against a text query.")
 
     @OptionGroup var options: ModelOptions
 
     @Option(name: .long, help: "Query text.")
     var query: String
 
-    @Option(name: .long, help: "Folder of images (png, jpg, jpeg, heic).")
-    var images: String
+    @Option(name: .long, help: "Folder of images (png, jpg, jpeg, heic) and videos (mp4, mov, m4v).")
+    var folder: String
 
     @Option(name: .long, help: "Number of results.")
     var top: Int = 5
 
     func run() async throws {
-        let folder = URL(filePath: images)
-        let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-            .filter { ["png", "jpg", "jpeg", "heic"].contains($0.pathExtension.lowercased()) }
+        let imageTypes: Set = ["png", "jpg", "jpeg", "heic"], videoTypes: Set = ["mp4", "mov", "m4v"]
+        let files = try FileManager.default.contentsOfDirectory(at: URL(filePath: folder), includingPropertiesForKeys: nil)
+            .filter { imageTypes.union(videoTypes).contains($0.pathExtension.lowercased()) }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
         let embedder = try await options.load()
         let start = ContinuousClock.now
         var vectors: [[Float]] = []
-        for file in files { vectors.append(try await embedder.embed(imageAt: file, dimension: options.dim)) }
+        for file in files {
+            vectors.append(videoTypes.contains(file.pathExtension.lowercased())
+                ? try await embedder.embed(videoAt: file, dimension: options.dim)
+                : try await embedder.embed(imageAt: file, dimension: options.dim))
+        }
         let q = try await embedder.embed(query, task: .none, dimension: options.dim)
         let elapsed = ContinuousClock.now - start
         let ranked = vectors.enumerated().map { ($0.offset, EmbeddingGemma2.cosine(q, $0.element)) }.sorted { $0.1 > $1.1 }
-        print("query: \(query)   (\(files.count) images, dim \(options.dim), \(milliseconds(elapsed)) ms total)")
+        print("query: \(query)   (\(files.count) files, dim \(options.dim), \(milliseconds(elapsed)) ms total)")
         for (rank, hit) in ranked.prefix(top).enumerated() {
             print(String(format: "%2d. %.4f  ", rank + 1, hit.1) + files[hit.0].lastPathComponent)
         }

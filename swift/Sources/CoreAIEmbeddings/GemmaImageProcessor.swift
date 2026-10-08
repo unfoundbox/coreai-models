@@ -7,6 +7,8 @@ public struct GemmaImageInputs: Sendable {
     /// Patch grid of the resized image.
     public let gridHeight: Int
     public let gridWidth: Int
+    /// Patch budget P these arrays are padded to (2520 for images, 1260 for video frames).
+    public let budget: Int
     /// Number of soft tokens (one per 3x3 block of patches).
     public var softTokenCount: Int { gridHeight * gridWidth / (GemmaImageProcessor.pool * GemmaImageProcessor.pool) }
     /// Channel-major (768, P): pixel values 0...1, patch flattened as (row, col, channel).
@@ -23,7 +25,8 @@ public struct GemmaImageInputs: Sendable {
 public enum GemmaImageProcessor {
     public static let patch = 16
     public static let pool = 3
-    public static let maxPatches = 2520
+    public static let maxPatches = 2520  // images: 280 soft tokens
+    public static let videoFramePatches = 1260  // video frames: 140 soft tokens
     static let patchValues = 3 * patch * patch  // 768
     static let headDim = 64
     static let ropeTheta: Float = 100
@@ -32,12 +35,12 @@ public enum GemmaImageProcessor {
 
     /// HF `get_aspect_ratio_preserving_size`: the largest size with sides that are multiples of 48 and
     /// at most `maxPatches` 16x16 patches. Returns (height, width).
-    public static func targetSize(height: Int, width: Int) -> (height: Int, width: Int) {
-        let factor = (Double(maxPatches * patch * patch) / Double(height * width)).squareRoot()
+    public static func targetSize(height: Int, width: Int, budget: Int = maxPatches) -> (height: Int, width: Int) {
+        let factor = (Double(budget * patch * patch) / Double(height * width)).squareRoot()
         let side = pool * patch
         var th = Int((factor * Double(height) / Double(side)).rounded(.down)) * side
         var tw = Int((factor * Double(width) / Double(side)).rounded(.down)) * side
-        let maxSide = (maxPatches / (pool * pool)) * side
+        let maxSide = (budget / (pool * pool)) * side
         if th == 0 {
             th = side
             tw = min((width / height) * side, maxSide)
@@ -142,17 +145,19 @@ public enum GemmaImageProcessor {
     // MARK: Patches, positions, RoPE
 
     /// Full preprocessing for one image.
-    public static func inputs(for image: CGImage) throws -> GemmaImageInputs {
+    public static func inputs(for image: CGImage, budget: Int = maxPatches) throws -> GemmaImageInputs {
         let (rgb, w, h) = try rgbPixels(image)
-        let (th, tw) = targetSize(height: h, width: w)
+        let (th, tw) = targetSize(height: h, width: w, budget: budget)
         let resized = resize(rgb, width: w, height: h, outWidth: tw, outHeight: th)
-        return inputs(resizedRGB: resized, width: tw, height: th)
+        return inputs(resizedRGB: resized, width: tw, height: th, budget: budget)
     }
 
     /// Preprocessing after the resize (exposed for tests that start from HF's resized pixels).
-    public static func inputs(resizedRGB rgb: [UInt8], width: Int, height: Int) -> GemmaImageInputs {
+    public static func inputs(resizedRGB rgb: [UInt8], width: Int, height: Int, budget: Int = maxPatches)
+        -> GemmaImageInputs
+    {
         let gh = height / patch, gw = width / patch
-        let p = maxPatches
+        let p = budget
         var pixels = [Float16](repeating: 0, count: patchValues * p)
         var xIDs = [Int32](repeating: 0, count: p)
         var yIDs = [Int32](repeating: 0, count: p)
@@ -198,7 +203,7 @@ public enum GemmaImageProcessor {
             for d in 0..<headDim { cos[d * p + s] = 1 }
         }
         return GemmaImageInputs(
-            gridHeight: gh, gridWidth: gw, pixelPatches: pixels, xIDs: xIDs, yIDs: yIDs,
+            gridHeight: gh, gridWidth: gw, budget: p, pixelPatches: pixels, xIDs: xIDs, yIDs: yIDs,
             ropeCos: cos, ropeSin: sin, patchMask: mask)
     }
 }

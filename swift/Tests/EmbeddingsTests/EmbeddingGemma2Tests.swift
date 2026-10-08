@@ -81,7 +81,9 @@ struct EmbeddingGemma2ModelTests {
         let maxTokens = await embedder.maxTokens
         for item in ref.items where item.input_ids.count <= maxTokens {
             let task = try #require(EmbeddingTask(promptName: item.prompt_name))
-            let v = try await embedder.embed(item.text, task: task)
+            // The reference truncated at its own max_tokens (2048); truncate the same way.
+            let ids = EmbeddingGemma2.truncate(tokenIDs: await embedder.tokenize(item.text, task: task), maxTokens: ref.max_tokens)
+            let v = try await embedder.embed(tokenIDs: ids)
             let cos = EmbeddingGemma2.cosine(v, item.embedding)
             #expect(cos >= 0.999, "cos \(cos) for \(item.text.prefix(40))")
         }
@@ -209,5 +211,112 @@ struct EmbeddingGemma2ImageTests {
             scores.append((item.stem, EmbeddingGemma2.cosine(copy, v)))
         }
         #expect(scores.max { $0.1 < $1.1 }?.0 == "stop_sign", "\(scores)")
+    }
+}
+
+// MARK: - Video
+
+struct VideoReference: Decodable {
+    struct Item: Decodable {
+        let stem: String
+        let caption: String
+        let fps: Double
+        let total_frames: Int
+        let sampled_indices: [Int]
+        let embedding: [Float]
+    }
+    let items: [Item]
+
+    static let dir = TextReference.url.deletingLastPathComponent()
+
+    static func load() throws -> VideoReference {
+        try JSONDecoder().decode(VideoReference.self, from: Data(contentsOf: dir.appending(path: "video_reference.json")))
+    }
+
+    static func url(_ stem: String) -> URL { dir.appending(path: "videos/\(stem).mp4") }
+
+    /// The frames HF sampled, decoded by PyAV.
+    static func hfFrames(_ stem: String) throws -> [CGImage] {
+        let folder = dir.appending(path: "videos/\(stem)")
+        let names = try FileManager.default.contentsOfDirectory(atPath: folder.path).filter { $0.hasSuffix(".png") }.sorted()
+        return try names.map { try CGImageUtils.load(from: folder.appending(path: $0)) }
+    }
+}
+
+@Suite struct GemmaVideoSamplerTests {
+    @Test func indicesMatchHF() throws {
+        for item in try VideoReference.load().items {
+            let idx = GemmaVideoSampler.sampleIndices(totalFrames: item.total_frames, fps: item.fps)
+            #expect(idx == item.sampled_indices, "\(item.stem)")
+        }
+    }
+
+    /// AVFoundation decode vs PyAV decode of the same H.264 frames (YUV -> RGB conversions differ slightly).
+    @Test func decodedFramesCloseToHF() async throws {
+        for item in try VideoReference.load().items.prefix(3) {
+            let mine = try await GemmaVideoSampler.frames(from: VideoReference.url(item.stem))
+            let hf = try VideoReference.hfFrames(item.stem)
+            #expect(mine.count == hf.count, "\(item.stem): \(mine.count) vs \(hf.count) frames")
+            var total = 0.0, count = 0
+            for (a, b) in zip(mine, hf) {
+                let pa = try GemmaImageProcessor.rgbPixels(a).pixels, pb = try GemmaImageProcessor.rgbPixels(b).pixels
+                for i in 0..<min(pa.count, pb.count) { total += Double(abs(Int(pa[i]) - Int(pb[i]))) }
+                count += pa.count
+            }
+            #expect(total / Double(count) < 3, "\(item.stem): mean |diff| \(total / Double(count))")
+        }
+    }
+}
+
+@Suite(.enabled(if: modelURL != nil && tokenizerFolder != nil, "set EMBEDDINGGEMMA2_MODEL to an exported .aimodel"))
+struct EmbeddingGemma2VideoTests {
+    /// Model parity from HF's own frames (isolates the model from video decoding).
+    @Test func videoParityFromHFFrames() async throws {
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        try #require(await embedder.supportsVideo)
+        for item in try VideoReference.load().items {
+            let v = try await embedder.embed(videoFrames: VideoReference.hfFrames(item.stem))
+            let cos = EmbeddingGemma2.cosine(v, item.embedding)
+            #expect(cos >= 0.999, "cos \(cos) for \(item.stem)")
+        }
+    }
+
+    /// Full path from the .mp4 (AVFoundation decode + sampling) vs the fp32 reference.
+    @Test func videoParityFromFile() async throws {
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        for item in try VideoReference.load().items {
+            let v = try await embedder.embed(videoAt: VideoReference.url(item.stem))
+            let cos = EmbeddingGemma2.cosine(v, item.embedding)
+            #expect(cos >= 0.995, "cos \(cos) for \(item.stem)")
+        }
+    }
+
+    /// text -> video: each caption ranks its own clip first.
+    @Test func captionFindsItsVideo() async throws {
+        let ref = try VideoReference.load()
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        var videos: [[Float]] = []
+        for item in ref.items { videos.append(try await embedder.embed(videoFrames: VideoReference.hfFrames(item.stem))) }
+        for (i, item) in ref.items.enumerated() {
+            let q = try await embedder.embed(item.caption)
+            let best = videos.indices.max { EmbeddingGemma2.cosine(q, videos[$0]) < EmbeddingGemma2.cosine(q, videos[$1]) }
+            #expect(best == i, "'\(item.caption)' matched \(ref.items[best!].stem)")
+        }
+    }
+
+    /// image <-> video: a still image finds the clip with the same object.
+    @Test func imageFindsMatchingVideo() async throws {
+        let ref = try VideoReference.load()
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        var videos: [String: [Float]] = [:]
+        for item in ref.items { videos[item.stem] = try await embedder.embed(videoFrames: VideoReference.hfFrames(item.stem)) }
+        let pairs = [("red_circle", "red_ball_moving"), ("blue_square", "blue_square_growing"),
+                     ("green_triangle", "green_triangle_rotating"), ("yellow_star_tall", "yellow_star_falling"),
+                     ("checkerboard", "checkerboard_flashing")]
+        for (image, video) in pairs {
+            let v = try await embedder.embed(image: ImageReference.image(image))
+            let best = videos.max { EmbeddingGemma2.cosine(v, $0.value) < EmbeddingGemma2.cosine(v, $1.value) }!.key
+            #expect(best == video, "\(image) matched \(best)")
+        }
     }
 }

@@ -21,6 +21,7 @@ module because int32 ids cannot run on the Neural Engine.
 import json
 import math
 from pathlib import Path
+from typing import NamedTuple
 
 import torch
 import torch.nn as nn
@@ -36,6 +37,22 @@ SLIDING_WINDOW = 512
 FULL_LAYERS = (5, 11, 17, 23)
 EPS = 1e-6
 MASK_NEG = -20000.0  # two masks add to -40000, still finite in fp16
+CHUNK = 512  # query chunk for long buckets
+CHUNKED_ABOVE = 2048  # buckets longer than this use chunked attention
+
+
+class BandedMask(NamedTuple):
+    """Sliding attention in query chunks. Keys are padded by the window on both sides, so every
+    chunk sees a static window of CHUNK + 2 * SLIDING_WINDOW keys."""
+
+    key_mask_padded: torch.Tensor  # (1, L + 2W, 1, 1): padding and the added edges are MASK_NEG
+    band: torch.Tensor  # (1, CHUNK + 2W, 1, CHUNK): MASK_NEG where |key - query| > W
+
+
+class ChunkedMask(NamedTuple):
+    """Full attention in query chunks against all keys."""
+
+    key_mask: torch.Tensor  # (1, L, 1, 1)
 
 
 def _layer_shape(i: int) -> tuple[int, int, float]:
@@ -99,17 +116,39 @@ class Attention(nn.Module):
             keys.append(k.permute(0, 3, 2, 1))  # (1, L_k, 1, hd)
             values.append(self.v_norm(v).permute(0, 3, 2, 1))
 
+        if isinstance(mask, BandedMask):
+            w = SLIDING_WINDOW
+            pad = keys[0].new_zeros(1, w, 1, hd)
+            keys = [torch.cat([pad, k, pad], dim=1) for k in keys]
+            values = [torch.cat([pad, v, pad], dim=1) for v in values]
+
         outs = []
         for h, q in enumerate(qs):
             q = self.q_norm(q)
             q = q * cos + _rotate_half(q) * sin  # (1, hd, 1, L_q)
             kv = h // group
-            scores = torch.einsum("bchq,bkhc->bkhq", q, keys[kv])  # (1, L_k, 1, L_q); scaling is 1.0
-            if mask is not None:
-                scores = scores + mask
-            probs = scores.softmax(dim=1)
-            outs.append(torch.einsum("bkhq,bkhc->bchq", probs, values[kv]))
+            if isinstance(mask, BandedMask):
+                span = CHUNK + 2 * SLIDING_WINDOW
+                parts = []
+                for s in range(0, q.shape[3], CHUNK):
+                    m = mask.band + mask.key_mask_padded[:, s : s + span]
+                    parts.append(_attend(q[..., s : s + CHUNK], keys[kv][:, s : s + span], values[kv][:, s : s + span], m))
+                outs.append(torch.cat(parts, dim=3))
+            elif isinstance(mask, ChunkedMask):
+                parts = [_attend(q[..., s : s + CHUNK], keys[kv], values[kv], mask.key_mask)
+                         for s in range(0, q.shape[3], CHUNK)]
+                outs.append(torch.cat(parts, dim=3))
+            else:
+                outs.append(_attend(q, keys[kv], values[kv], mask))
         return self.o_proj(torch.cat(outs, dim=1))
+
+
+def _attend(q, k, v, mask):
+    """q (1, hd, 1, L_q); k, v (1, L_k, 1, hd); additive mask broadcastable to (1, L_k, 1, L_q)."""
+    scores = torch.einsum("bchq,bkhc->bkhq", q, k)  # scaling is 1.0
+    if mask is not None:
+        scores = scores + mask
+    return torch.einsum("bkhq,bkhc->bchq", scores.softmax(dim=1), v)
 
 
 class MLP(nn.Module):
@@ -189,7 +228,17 @@ class TextEncoder(nn.Module):
             ang = torch.cat([pos[None, :] * inv[:, None]] * 2, dim=0)  # (hd, L)
             self.register_buffer(f"cos_{hd}", ang.cos()[None, :, None, :])
             self.register_buffer(f"sin_{hd}", ang.sin()[None, :, None, :])
-        if seq_len > SLIDING_WINDOW + 1:
+        self.chunked = seq_len > CHUNKED_ABOVE
+        if self.chunked:
+            if seq_len % CHUNK:
+                raise ValueError(f"chunked buckets must be multiples of {CHUNK}, got {seq_len}")
+            k = torch.arange(CHUNK + 2 * SLIDING_WINDOW)[:, None] - SLIDING_WINDOW
+            q = torch.arange(CHUNK)[None, :]
+            band = ((k - q).abs() > SLIDING_WINDOW).float() * MASK_NEG
+            self.register_buffer("band", band[None, :, None, :])  # (1, CHUNK + 2W, 1, CHUNK)
+            self.register_buffer("edge_mask", torch.full((1, SLIDING_WINDOW, 1, 1), MASK_NEG))
+            self.sliding_mask = None
+        elif seq_len > SLIDING_WINDOW + 1:
             i = torch.arange(seq_len)
             far = (i[:, None] - i[None, :]).abs() > SLIDING_WINDOW
             self.register_buffer("sliding_mask", (far.float() * MASK_NEG)[None, :, None, :])
@@ -203,8 +252,12 @@ class TextEncoder(nn.Module):
         ple = self.per_layer_projection_norm(ple)
 
         key_mask = ((attention_mask - 1.0) * -self.mask_neg).reshape(1, self.seq_len, 1, 1)
-        full_mask = key_mask
-        sliding_mask = key_mask if self.sliding_mask is None else key_mask + self.sliding_mask
+        if self.chunked:
+            full_mask = ChunkedMask(key_mask)
+            sliding_mask = BandedMask(torch.cat([self.edge_mask, key_mask, self.edge_mask], dim=1), self.band)
+        else:
+            full_mask = key_mask
+            sliding_mask = key_mask if self.sliding_mask is None else key_mask + self.sliding_mask
 
         for i, layer in enumerate(self.layers):
             if layer.is_full:

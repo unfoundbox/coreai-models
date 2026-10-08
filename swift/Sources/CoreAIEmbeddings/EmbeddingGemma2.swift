@@ -13,13 +13,13 @@ import Tokenizers
 public actor EmbeddingGemma2 {
     public static let fullDimension = 768
     public static let supportedDimensions = [768, 512, 256, 128]
-    static let candidateBuckets = [128, 512, 2048, 8192]
     static let bosID = 2
     static let eosID = 1
     static let padID = 0
     static let imageStartID = 255999  // <|image>
     static let imageTokenID = 258880  // <|image|>
     static let imageEndID = 258882  // <image|>
+    static let videoTokenID = 258884  // <|video|>
 
     private struct Bucket {
         let length: Int
@@ -38,10 +38,13 @@ public actor EmbeddingGemma2 {
 
     private let tokenizer: any Tokenizer
     private let buckets: [Bucket]
-    private let vision: Vision?
+    /// Vision functions per patch budget (2520 = images, 1260 = video frames).
+    private let visions: [Int: Vision]
 
     /// True when the asset has the image functions (`image_positions_2520`, `embed_image_2520`).
-    public var supportsImages: Bool { vision != nil }
+    public var supportsImages: Bool { visions[GemmaImageProcessor.maxPatches] != nil }
+    /// True when the asset has the video-frame functions (`*_1260`).
+    public var supportsVideo: Bool { visions[GemmaImageProcessor.videoFramePatches] != nil }
 
     /// Longest input in tokens, special tokens included. Longer inputs are truncated.
     public var maxTokens: Int { buckets.last?.length ?? 0 }
@@ -58,8 +61,12 @@ public actor EmbeddingGemma2 {
         let model = try await AIModel(contentsOf: modelURL, options: options)
         self.tokenizer = try await AutoTokenizer.from(modelFolder: tokenizerFolder)
 
+        // Buckets come from the asset's function names (embed_text_{L}).
+        let lengths = model.functionNames.compactMap { name -> Int? in
+            name.hasPrefix("embed_text_") ? Int(name.dropFirst("embed_text_".count)) : nil
+        }.sorted()
         var found: [Bucket] = []
-        for length in Self.candidateBuckets {
+        for length in lengths {
             let tokName = "embed_tokens_\(length)"
             let encName = "embed_text_\(length)"
             guard let tokFn = try model.loadFunction(named: tokName),
@@ -78,11 +85,13 @@ public actor EmbeddingGemma2 {
         }
         self.buckets = found
 
-        let posName = "image_positions_\(GemmaImageProcessor.maxPatches)"
-        let imgName = "embed_image_\(GemmaImageProcessor.maxPatches)"
-        if let posFn = try model.loadFunction(named: posName), let imgFn = try model.loadFunction(named: imgName),
-            let posDesc = model.functionDescriptor(for: posName), let imgDesc = model.functionDescriptor(for: imgName)
-        {
+        var visions: [Int: Vision] = [:]
+        for budget in [GemmaImageProcessor.maxPatches, GemmaImageProcessor.videoFramePatches] {
+            let posName = "image_positions_\(budget)"
+            let imgName = "embed_image_\(budget)"
+            guard let posFn = try model.loadFunction(named: posName), let imgFn = try model.loadFunction(named: imgName),
+                let posDesc = model.functionDescriptor(for: posName), let imgDesc = model.functionDescriptor(for: imgName)
+            else { continue }
             var descriptors: [String: NDArrayDescriptor] = [:]
             for name in ["x_ids", "y_ids"] {
                 if case .ndArray(let d) = posDesc.inputDescriptor(of: name) { descriptors[name] = d }
@@ -90,10 +99,11 @@ public actor EmbeddingGemma2 {
             for name in ["pixel_patches", "rope_cos", "rope_sin", "patch_mask"] {
                 if case .ndArray(let d) = imgDesc.inputDescriptor(of: name) { descriptors[name] = d }
             }
-            self.vision = descriptors.count == 6 ? Vision(positions: posFn, encoder: imgFn, descriptors: descriptors) : nil
-        } else {
-            self.vision = nil
+            if descriptors.count == 6 {
+                visions[budget] = Vision(positions: posFn, encoder: imgFn, descriptors: descriptors)
+            }
         }
+        self.visions = visions
     }
 
     // MARK: Tokenization
@@ -148,7 +158,8 @@ public actor EmbeddingGemma2 {
         var idsArray = NDArray(descriptor: bucket.idsDescriptor)
         fillNDArray(&idsArray, as: Int32.self, count: length) {
             guard $0 < ids.count else { return Int32(Self.padID) }
-            return ids[$0] == Self.imageTokenID ? Int32(Self.padID) : Int32(ids[$0])  // HF: image slots use pad
+            let id = ids[$0]
+            return id == Self.imageTokenID || id == Self.videoTokenID ? Int32(Self.padID) : Int32(id)  // HF: slots use pad
         }
         var tokOut = try await bucket.tokens.run(inputs: ["input_ids": idsArray])
         guard var inputsEmbeds = tokOut.remove("inputs_embeds")?.ndArray else {
@@ -184,10 +195,39 @@ public actor EmbeddingGemma2 {
 
     /// Image embedding from already-preprocessed inputs.
     public func embed(imageInputs inputs: GemmaImageInputs, dimension: Int = fullDimension) async throws -> [Float] {
-        guard let vision else { throw EmbeddingError.imagesUnsupported }
-        guard Self.supportedDimensions.contains(dimension) else { throw EmbeddingError.unsupportedDimension(dimension) }
-        let d = vision.descriptors
+        guard supportsImages else { throw EmbeddingError.imagesUnsupported }
+        let soft = try await softTokens(inputs)
+        let n = inputs.softTokenCount
+        let ids = [Self.bosID, Self.imageStartID] + Array(repeating: Self.imageTokenID, count: n) + [Self.imageEndID, Self.eosID]
+        return try await embed(tokenIDs: ids, dimension: dimension, slotTokens: [soft])
+    }
 
+    // MARK: Video
+
+    /// L2-normalized embedding of a video file: 1 frame per second, at most 32 frames (HF defaults).
+    public func embed(videoAt url: URL, dimension: Int = fullDimension) async throws -> [Float] {
+        try await embed(videoFrames: GemmaVideoSampler.frames(from: url), dimension: dimension)
+    }
+
+    /// L2-normalized embedding of already-sampled frames, in order.
+    public func embed(videoFrames frames: [CGImage], dimension: Int = fullDimension) async throws -> [Float] {
+        guard supportsVideo else { throw EmbeddingError.videoUnsupported }
+        guard !frames.isEmpty else { throw EmbeddingError.noFrames }
+        var perFrame: [[Float16]] = []
+        var ids = [Self.bosID]
+        for frame in frames {
+            let inputs = try GemmaImageProcessor.inputs(for: frame, budget: GemmaImageProcessor.videoFramePatches)
+            perFrame.append(try await softTokens(inputs))
+            ids += [Self.imageStartID] + Array(repeating: Self.videoTokenID, count: inputs.softTokenCount) + [Self.imageEndID]
+        }
+        ids.append(Self.eosID)
+        return try await embed(tokenIDs: ids, dimension: dimension, slotTokens: perFrame)
+    }
+
+    /// Runs the vision functions for one image or frame. Returns channel-major (512, N) soft tokens.
+    private func softTokens(_ inputs: GemmaImageInputs) async throws -> [Float16] {
+        guard let vision = visions[inputs.budget] else { throw EmbeddingError.imagesUnsupported }
+        let d = vision.descriptors
         func array<T: BitwiseCopyable>(_ name: String, _ values: [T]) -> NDArray {
             var a = NDArray(descriptor: d[name]!)
             fillNDArray(&a, as: T.self, count: values.count) { values[$0] }
@@ -203,18 +243,31 @@ public actor EmbeddingGemma2 {
             "patch_mask": array("patch_mask", inputs.patchMask),
         ])
         guard let softArray = imgOut.remove("soft_tokens")?.ndArray else { throw EmbeddingError.missingOutput("soft_tokens") }
-
-        // Soft tokens: (1, 512, 1, 280), channel-major. Keep the first N per channel.
+        let slots = softArray.shape[3], channels = softArray.shape[1]
+        let all = readNDArray(softArray, as: Float16.self, count: softArray.shape.reduce(1, *))
         let n = inputs.softTokenCount
-        let slots = softArray.shape[3]
-        let soft = readNDArray(softArray, as: Float16.self, count: softArray.shape.reduce(1, *))
+        var out = [Float16](repeating: 0, count: channels * n)
+        for c in 0..<channels {
+            for j in 0..<n { out[c * n + j] = all[c * slots + j] }
+        }
+        return out
+    }
 
-        let ids = [Self.bosID, Self.imageStartID] + Array(repeating: Self.imageTokenID, count: n) + [Self.imageEndID, Self.eosID]
+    /// Text path with soft tokens placed into the image/video slot columns, in order.
+    /// `slotTokens`: one channel-major (512, N_i) block per image or frame.
+    private func embed(tokenIDs ids: [Int], dimension: Int, slotTokens: [[Float16]]) async throws -> [Float] {
+        // Never truncate multimodal input: cutting through the slots would misplace soft tokens.
+        guard ids.count <= maxTokens else { throw EmbeddingError.inputTooLong(ids.count, maxTokens) }
+        let columns = ids.indices.filter { ids[$0] == Self.imageTokenID || ids[$0] == Self.videoTokenID }
         return try await embed(tokenIDs: ids, dimension: dimension) { embeds, length in
-            // Image slots start at column 2.
             let channels = embeds.count / length
-            for c in 0..<channels {
-                for j in 0..<n { embeds[c * length + 2 + j] = soft[c * slots + j] }
+            var col = 0
+            for block in slotTokens {
+                let n = block.count / channels
+                for j in 0..<n {
+                    for c in 0..<channels { embeds[c * length + columns[col]] = block[c * n + j] }
+                    col += 1
+                }
             }
         }
     }
@@ -296,6 +349,8 @@ public enum EmbeddingError: Error, CustomStringConvertible {
     case unsupportedDimension(Int)
     case inputTooLong(Int, Int)
     case imagesUnsupported
+    case videoUnsupported
+    case noFrames
     case imageDecodingFailed
 
     public var description: String {
@@ -306,6 +361,8 @@ public enum EmbeddingError: Error, CustomStringConvertible {
         case .inputTooLong(let n, let max): "\(n) tokens exceed the largest bucket (\(max))"
         case .imagesUnsupported: "this .aimodel has no image functions (export with --modalities text,image)"
         case .imageDecodingFailed: "could not read the image pixels"
+        case .videoUnsupported: "this .aimodel has no video-frame functions (export with --image-budgets 2520,1260)"
+        case .noFrames: "the video produced no frames"
         }
     }
 }

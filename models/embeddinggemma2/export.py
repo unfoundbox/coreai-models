@@ -52,8 +52,10 @@ FIX = HERE / "reference" / "fixtures"
 SCALES = FIX / "fp16_scales.json"
 MODEL_ID = "google/embeddinggemma-2"
 REVISION = "914f7f89142e33e77833254d9c9b90c3cef7303b"
-NUM_PATCHES = 2520
+NUM_PATCHES = 2520  # image budget (280 soft tokens)
+VIDEO_PATCHES = 1260  # per-frame budget for video (140 soft tokens)
 IMAGE_TOKEN_ID = 258880
+VIDEO_TOKEN_ID = 258884
 VISION_HIDDEN = 768
 
 
@@ -65,8 +67,16 @@ def text_fn(seq_len: int) -> str:
     return f"embed_text_{seq_len}"
 
 
-POSITIONS_FN = f"image_positions_{NUM_PATCHES}"
-IMAGE_FN = f"embed_image_{NUM_PATCHES}"
+def positions_fn(p: int) -> str:
+    return f"image_positions_{p}"
+
+
+def image_fn(p: int) -> str:
+    return f"embed_image_{p}"
+
+
+POSITIONS_FN = positions_fn(NUM_PATCHES)
+IMAGE_FN = image_fn(NUM_PATCHES)
 
 
 def weights_path() -> str:
@@ -88,11 +98,21 @@ def build_text(buckets: list[int]) -> tuple[TokenEmbedding, dict[int, TextEncode
     return base.embed, encoders
 
 
-def build_vision() -> tuple[VisionPositions, VisionEncoder]:
+def build_vision(budgets: list[int]) -> tuple[VisionPositions, dict[int, VisionEncoder]]:
+    """One encoder per patch budget; parameters are shared, so the asset stores them once."""
+    scales = load_scales(SCALES, "vision")
     positions = VisionPositions()
-    encoder = VisionEncoder(NUM_PATCHES, load_scales(SCALES, "vision"))
-    load_vision_weights(positions, encoder, weights_path())
-    return positions.eval().half(), encoder.eval().half()
+    base = VisionEncoder(budgets[0], scales)
+    load_vision_weights(positions, base, weights_path())
+    encoders = {budgets[0]: base.eval().half()}
+    shared = dict(encoders[budgets[0]].named_parameters())
+    for p in budgets[1:]:
+        enc = VisionEncoder(p, scales).eval().half()
+        for name, param in shared.items():
+            owner, _, leaf = name.rpartition(".")
+            setattr(enc.get_submodule(owner) if owner else enc, leaf, param)
+        encoders[p] = enc
+    return positions.eval().half(), encoders
 
 
 def convert(text, vision, debug: bool):
@@ -115,20 +135,22 @@ def convert(text, vision, debug: bool):
                 add(enc, (torch.zeros(1, HIDDEN, 1, b, dtype=torch.float16), mask),
                     ["inputs_embeds", "attention_mask"], ["embedding"], text_fn(b))
         if vision:
-            vpos, venc = vision
-            # Two distinct tensors: passing one tensor twice makes torch.export alias the inputs,
-            # and both lookups then read the same ids.
-            x_ids = torch.zeros(1, NUM_PATCHES, dtype=torch.int32)
-            y_ids = torch.zeros(1, NUM_PATCHES, dtype=torch.int32)
-            add(vpos, (x_ids, y_ids), ["x_ids", "y_ids"], ["pos_embeds"], POSITIONS_FN)
+            vpos, vencs = vision
             f16 = lambda *s: torch.zeros(*s, dtype=torch.float16)  # noqa: E731
-            add(venc, (f16(1, VISION_HIDDEN, 1, NUM_PATCHES), f16(1, VISION_HIDDEN, 1, NUM_PATCHES),
-                       f16(1, HEAD_DIM, 1, NUM_PATCHES), f16(1, HEAD_DIM, 1, NUM_PATCHES), f16(1, NUM_PATCHES)),
-                ["pixel_patches", "pos_embeds", "rope_cos", "rope_sin", "patch_mask"], ["soft_tokens"], IMAGE_FN)
+            for p, venc in vencs.items():
+                # Two distinct tensors: passing one tensor twice makes torch.export alias the inputs,
+                # and both lookups then read the same ids.
+                x_ids = torch.zeros(1, p, dtype=torch.int32)
+                y_ids = torch.zeros(1, p, dtype=torch.int32)
+                add(vpos, (x_ids, y_ids), ["x_ids", "y_ids"], ["pos_embeds"], positions_fn(p))
+                add(venc, (f16(1, VISION_HIDDEN, 1, p), f16(1, VISION_HIDDEN, 1, p),
+                           f16(1, HEAD_DIM, 1, p), f16(1, HEAD_DIM, 1, p), f16(1, p)),
+                    ["pixel_patches", "pos_embeds", "rope_cos", "rope_sin", "patch_mask"], ["soft_tokens"], image_fn(p))
     return converter.to_coreai()
 
 
-async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None, compute: str) -> None:
+async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None, compute: str,
+                video_inputs: Path | None = None) -> None:
     from coreai.runtime import AIModel, ComputeUnitKind, NDArray, SpecializationOptions
 
     kinds = {"neural-engine": ComputeUnitKind.neural_engine(), "gpu": ComputeUnitKind.gpu()}
@@ -144,15 +166,16 @@ async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None,
     async def text_embedding(ids: np.ndarray, soft: np.ndarray | None = None) -> tuple[np.ndarray, int, float]:
         n = len(ids)
         b = next(b for b in sorted(txt_fns) if n <= b)
+        slots = (ids == IMAGE_TOKEN_ID) | (ids == VIDEO_TOKEN_ID)
         x = np.zeros((1, b), dtype=np.int32)
-        x[0, :n] = np.where(ids == IMAGE_TOKEN_ID, 0, ids)
+        x[0, :n] = np.where(slots, 0, ids)
         m = np.zeros((1, b), dtype=np.float16)
         m[0, :n] = 1
         emb = (await tok_fns[b]({"input_ids": NDArray(x)}))["inputs_embeds"]
         if soft is not None:
             e = np.array(emb.numpy(), dtype=np.float16)
             cols = e[0, :, 0]  # (512, L) view
-            cols[:, np.nonzero(ids == IMAGE_TOKEN_ID)[0]] = soft
+            cols[:, np.nonzero(slots)[0]] = soft
             emb = NDArray(np.ascontiguousarray(e))
         t0 = time.time()
         out = await txt_fns[b]({"inputs_embeds": emb, "attention_mask": NDArray(m)})
@@ -170,6 +193,40 @@ async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None,
             cos.append(float(np.dot(v, ref["embeddings"][i])))
             print(f"[check] text  len {n:5d} bucket {b:5d} cos {cos[-1]:.6f}  encoder {dt * 1000:.1f} ms")
         print(f"[check] text  min cos {min(cos):.6f}  below 0.999: {sum(c < 0.999 for c in cos)}/{len(cos)}")
+
+    async def soft_tokens(p: int, patches: np.ndarray, positions: np.ndarray) -> tuple[np.ndarray, float]:
+        """One image/frame: patches (P, 768) fp16 block order, positions (P, 2) -> (512, N) fp16."""
+        pos_fn, img_fn = model.load_function(positions_fn(p)), model.load_function(image_fn(p))
+        xy = np.clip(positions, 0, None).astype(np.int32)
+        pe = await pos_fn({"x_ids": NDArray(np.ascontiguousarray(xy[None, :, 0])),
+                           "y_ids": NDArray(np.ascontiguousarray(xy[None, :, 1]))})
+        cos_t, sin_t, mask_t = (t.numpy() for t in rope_and_mask(torch.from_numpy(positions)))
+        t0 = time.time()
+        out = await img_fn({"pixel_patches": NDArray(np.ascontiguousarray(patches.T[None, :, None, :])),
+                            "pos_embeds": pe["pos_embeds"], "rope_cos": NDArray(np.ascontiguousarray(cos_t)),
+                            "rope_sin": NDArray(np.ascontiguousarray(sin_t)),
+                            "patch_mask": NDArray(np.ascontiguousarray(mask_t))})
+        n = int((positions[:, 0] >= 0).sum()) // 9
+        return np.asarray(out["soft_tokens"].numpy(), dtype=np.float16)[0, :, 0, :n], time.time() - t0
+
+    if video_inputs and image_fn(VIDEO_PATCHES) in names and txt_fns:
+        import json
+        ref = json.loads((FIX / "video_reference.json").read_text())["items"]
+        data = np.load(video_inputs)
+        cos = []
+        for item in ref:
+            stem = item["stem"]
+            patches, positions, ids = data[f"{stem}__patches"], data[f"{stem}__positions"], data[f"{stem}__ids"]
+            frames, dt_vis = [], 0.0
+            for f in range(patches.shape[0]):
+                s, dt = await soft_tokens(VIDEO_PATCHES, patches[f], positions[f])
+                frames.append(s)
+                dt_vis += dt
+            v, b, dt_txt = await text_embedding(ids, np.concatenate(frames, axis=1))
+            cos.append(float(np.dot(v, np.array(item["embedding"]))))
+            print(f"[check] video {stem:24s} frames {len(frames):2d} bucket {b:5d}  embedding cos {cos[-1]:.6f}  "
+                  f"vision {dt_vis * 1000:.0f} ms + text {dt_txt * 1000:.0f} ms")
+        print(f"[check] video min cos {min(cos):.6f}  below 0.999: {sum(c < 0.999 for c in cos)}/{len(cos)}")
 
     if image_inputs and POSITIONS_FN in names:
         pos_fn, img_fn = model.load_function(POSITIONS_FN), model.load_function(IMAGE_FN)
@@ -208,13 +265,16 @@ async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None,
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--buckets", default="128,512,2048")
+    ap.add_argument("--buckets", default="128,512,2048,4608")
+    ap.add_argument("--image-budgets", default=f"{NUM_PATCHES},{VIDEO_PATCHES}",
+                    help="vision patch budgets: 2520 = images (280 tokens), 1260 = video frames (140 tokens)")
     ap.add_argument("--modalities", default="text,image")
     ap.add_argument("--output-dir", type=Path, default=REPO_ROOT / "exports")
     ap.add_argument("--name", default="embeddinggemma2_fp16")
     ap.add_argument("--check", action="store_true", help="parity vs fp32 fixtures (needs USE_OS_COREAI=1)")
     ap.add_argument("--check-only", type=Path, default=None, help="skip export; check this existing .aimodel")
     ap.add_argument("--image-inputs", type=Path, default=None, help="npz from check_image_model.py --dump-inputs")
+    ap.add_argument("--video-inputs", type=Path, default=None, help="npz from check_video_model.py --dump-inputs")
     ap.add_argument("--compute", default="neural-engine", choices=["neural-engine", "gpu", "default"])
     ap.add_argument("--debug-info", action="store_true")
     args = ap.parse_args()
@@ -224,7 +284,8 @@ def main() -> None:
     path = args.check_only
     if path is None:
         text = build_text(buckets) if "text" in modalities else None
-        vision = build_vision() if "image" in modalities else None
+        budgets = [int(p) for p in args.image_budgets.split(",")]
+        vision = build_vision(budgets) if "image" in modalities else None
         program = convert(text, vision, debug=args.debug_info)
         args.output_dir.mkdir(parents=True, exist_ok=True)
         path = args.output_dir / f"{args.name}.aimodel"
@@ -232,7 +293,7 @@ def main() -> None:
         size = sum(p.stat().st_size for p in path.rglob("*") if p.is_file()) if path.is_dir() else path.stat().st_size
         print(f"[export] saved {path} ({size / 2**20:.0f} MiB)")
     if args.check or args.check_only:
-        asyncio.run(check(path, buckets, args.image_inputs, args.compute))
+        asyncio.run(check(path, buckets, args.image_inputs, args.compute, args.video_inputs))
 
 
 if __name__ == "__main__":

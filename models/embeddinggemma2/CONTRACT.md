@@ -61,6 +61,24 @@ Caller steps for one image:
 Exact rewrites in the vision path: per-norm prescale; dropped pooler x sqrt(768) (it feeds a
 weightless RMSNorm); 3x3-block patch order so pooling is a static mean of 9 neighbours.
 
+### Video (frames through the image path at P = 1260 = 140 soft tokens)
+
+Functions `image_positions_1260` and `embed_image_1260` (same weights as the 2520 pair).
+1. Sample frame indices like HF (`EmbeddingGemma2VideoProcessor.sample_frames`, defaults):
+   `duration = total_frames / fps`; indices `min(total - 1, int(i * fps))` for `i < int(duration)`;
+   above 32 frames keep `np.linspace(0, n - 1, 32, dtype=int)` of them.
+2. Each frame: image steps 1-3 with budget 1260.
+3. Tokens: `<bos>` + per frame (`<|image>` + N x `<|video|>` (258884) + `<image|>`) + `<eos>`,
+   no separators. 32 frames x 142 + 2 = 4546 tokens at most, so video needs the 4608 bucket.
+
+Text buckets above 2048 use chunked attention: sliding layers attend per 512-query chunk to a static
+1536-key window (keys padded by 512 on both sides, one shared band-mask constant); full layers attend
+per 512-query chunk to all keys. Identical to dense attention in fp32.
+
+Results (Core AI, Neural Engine): 6 synthetic clips, embedding min cosine 0.99996 vs fp32
+(32-frame clip in the 4608 bucket: 0.999993). ~180 ms per frame + text (4608 bucket: ~750 ms).
+Swift `embed(videoAt:)` (AVFoundation decode) parity >= 0.995; sampled indices equal HF's.
+
 ### Placement lessons (vision)
 
 - A function the Neural Engine compiler fails on (`CompilationFailure`) moves **every** function
