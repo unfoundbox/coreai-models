@@ -1,0 +1,2 @@
+# Speech clips come from macOS `say` (make_audio_reference.py regenerates them); kept local.
+speech_*.wav

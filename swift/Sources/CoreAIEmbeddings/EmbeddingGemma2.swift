@@ -20,6 +20,9 @@ public actor EmbeddingGemma2 {
     static let imageTokenID = 258880  // <|image|>
     static let imageEndID = 258882  // <image|>
     static let videoTokenID = 258884  // <|video|>
+    static let audioStartID = 256000  // <|audio>
+    static let audioTokenID = 258881  // <|audio|>
+    static let audioEndID = 258883  // <audio|>
 
     private struct Bucket {
         let length: Int
@@ -40,6 +43,19 @@ public actor EmbeddingGemma2 {
     private let buckets: [Bucket]
     /// Vision functions per patch budget (2520 = images, 1260 = video frames).
     private let visions: [Int: Vision]
+
+    private struct AudioBucket {
+        let melFrames: Int
+        let encoder: InferenceFunction
+        let melDescriptor: NDArrayDescriptor
+        let maskDescriptor: NDArrayDescriptor
+    }
+
+    /// Audio encoders per mel-frame bucket (100 frames = 1 s).
+    private let audioBuckets: [AudioBucket]
+
+    /// True when the asset has audio functions (`embed_audio_{T}`).
+    public var supportsAudio: Bool { !audioBuckets.isEmpty }
 
     /// True when the asset has the image functions (`image_positions_2520`, `embed_image_2520`).
     public var supportsImages: Bool { visions[GemmaImageProcessor.maxPatches] != nil }
@@ -104,6 +120,20 @@ public actor EmbeddingGemma2 {
             }
         }
         self.visions = visions
+
+        var audio: [AudioBucket] = []
+        let melLengths = model.functionNames.compactMap { name -> Int? in
+            name.hasPrefix("embed_audio_") ? Int(name.dropFirst("embed_audio_".count)) : nil
+        }.sorted()
+        for t in melLengths {
+            let name = "embed_audio_\(t)"
+            guard let fn = try model.loadFunction(named: name), let desc = model.functionDescriptor(for: name),
+                case .ndArray(let melDesc) = desc.inputDescriptor(of: "mel"),
+                case .ndArray(let maskDesc) = desc.inputDescriptor(of: "frame_mask")
+            else { continue }
+            audio.append(AudioBucket(melFrames: t, encoder: fn, melDescriptor: melDesc, maskDescriptor: maskDesc))
+        }
+        self.audioBuckets = audio
     }
 
     // MARK: Tokenization
@@ -159,7 +189,8 @@ public actor EmbeddingGemma2 {
         fillNDArray(&idsArray, as: Int32.self, count: length) {
             guard $0 < ids.count else { return Int32(Self.padID) }
             let id = ids[$0]
-            return id == Self.imageTokenID || id == Self.videoTokenID ? Int32(Self.padID) : Int32(id)  // HF: slots use pad
+            let isSlot = id == Self.imageTokenID || id == Self.videoTokenID || id == Self.audioTokenID
+            return isSlot ? Int32(Self.padID) : Int32(id)  // HF: multimodal slots use the pad embedding
         }
         var tokOut = try await bucket.tokens.run(inputs: ["input_ids": idsArray])
         guard var inputsEmbeds = tokOut.remove("inputs_embeds")?.ndArray else {
@@ -224,6 +255,42 @@ public actor EmbeddingGemma2 {
         return try await embed(tokenIDs: ids, dimension: dimension, slotTokens: perFrame)
     }
 
+    // MARK: Audio
+
+    /// L2-normalized embedding of an audio file (any format AVFoundation reads; first 30 s).
+    public func embed(audioAt url: URL, dimension: Int = fullDimension) async throws -> [Float] {
+        try await embed(audioSamples: GemmaAudioProcessor.loadMono16k(url), dimension: dimension)
+    }
+
+    /// L2-normalized embedding of 16 kHz mono samples (first 30 s).
+    public func embed(audioSamples samples: [Float], dimension: Int = fullDimension) async throws -> [Float] {
+        let features = GemmaAudioProcessor.features(samples: samples)
+        guard features.validFrames > 0 else { throw EmbeddingError.audioDecodingFailed }
+        guard let bucket = audioBuckets.first(where: { features.frames <= $0.melFrames }) else {
+            throw EmbeddingError.audioUnsupported
+        }
+        var mel = NDArray(descriptor: bucket.melDescriptor)  // (1, 1, T, 128)
+        let values = features.mel
+        fillNDArray(&mel, as: Float16.self, count: bucket.melFrames * GemmaAudioProcessor.melBins) {
+            $0 < values.count ? Float16(values[$0]) : 0
+        }
+        var mask = NDArray(descriptor: bucket.maskDescriptor)
+        let frameMask = features.mask
+        fillNDArray(&mask, as: Float16.self, count: bucket.melFrames) { $0 < frameMask.count && frameMask[$0] ? 1 : 0 }
+        var out = try await bucket.encoder.run(inputs: ["mel": mel, "frame_mask": mask])
+        guard let softArray = out.remove("soft_tokens")?.ndArray else { throw EmbeddingError.missingOutput("soft_tokens") }
+
+        let n = features.tokenCount
+        let slots = softArray.shape[3], channels = softArray.shape[1]
+        let all = readNDArray(softArray, as: Float16.self, count: softArray.shape.reduce(1, *))
+        var soft = [Float16](repeating: 0, count: channels * n)
+        for c in 0..<channels {
+            for j in 0..<n { soft[c * n + j] = all[c * slots + j] }
+        }
+        let ids = [Self.bosID, Self.audioStartID] + Array(repeating: Self.audioTokenID, count: n) + [Self.audioEndID, Self.eosID]
+        return try await embed(tokenIDs: ids, dimension: dimension, slotTokens: [soft])
+    }
+
     /// Runs the vision functions for one image or frame. Returns channel-major (512, N) soft tokens.
     private func softTokens(_ inputs: GemmaImageInputs) async throws -> [Float16] {
         guard let vision = visions[inputs.budget] else { throw EmbeddingError.imagesUnsupported }
@@ -258,7 +325,8 @@ public actor EmbeddingGemma2 {
     private func embed(tokenIDs ids: [Int], dimension: Int, slotTokens: [[Float16]]) async throws -> [Float] {
         // Never truncate multimodal input: cutting through the slots would misplace soft tokens.
         guard ids.count <= maxTokens else { throw EmbeddingError.inputTooLong(ids.count, maxTokens) }
-        let columns = ids.indices.filter { ids[$0] == Self.imageTokenID || ids[$0] == Self.videoTokenID }
+        let slotIDs: Set = [Self.imageTokenID, Self.videoTokenID, Self.audioTokenID]
+        let columns = ids.indices.filter { slotIDs.contains(ids[$0]) }
         return try await embed(tokenIDs: ids, dimension: dimension) { embeds, length in
             let channels = embeds.count / length
             var col = 0
@@ -351,6 +419,8 @@ public enum EmbeddingError: Error, CustomStringConvertible {
     case imagesUnsupported
     case videoUnsupported
     case noFrames
+    case audioUnsupported
+    case audioDecodingFailed
     case imageDecodingFailed
 
     public var description: String {
@@ -363,6 +433,8 @@ public enum EmbeddingError: Error, CustomStringConvertible {
         case .imageDecodingFailed: "could not read the image pixels"
         case .videoUnsupported: "this .aimodel has no video-frame functions (export with --image-budgets 2520,1260)"
         case .noFrames: "the video produced no frames"
+        case .audioUnsupported: "this .aimodel has no audio function long enough (export with --modalities ...,audio)"
+        case .audioDecodingFailed: "could not read audio samples"
         }
     }
 }

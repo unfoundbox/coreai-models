@@ -320,3 +320,94 @@ struct EmbeddingGemma2VideoTests {
         }
     }
 }
+
+// MARK: - Audio
+
+struct AudioReference: Decodable {
+    struct Item: Decodable {
+        let stem: String
+        let caption: String
+        let samples: Int
+        let mel_frames: Int
+        let audio_tokens: Int
+        let embedding: [Float]
+    }
+    let items: [Item]
+    let mel_examples: [String: [[Float]]]
+
+    static let dir = TextReference.url.deletingLastPathComponent()
+
+    static func load() throws -> AudioReference {
+        try JSONDecoder().decode(AudioReference.self, from: Data(contentsOf: dir.appending(path: "audio_reference.json")))
+    }
+
+    static func url(_ stem: String) -> URL { dir.appending(path: "audio/\(stem).wav") }
+    /// Speech clips come from macOS `say` and are not committed; tests use them when present.
+    static func available(_ stem: String) -> Bool { FileManager.default.fileExists(atPath: url(stem).path) }
+}
+
+@Suite struct GemmaAudioProcessorTests {
+    @Test(arguments: ["tone_440hz", "chirp_rising"])
+    func melMatchesHF(stem: String) throws {
+        let ref = try AudioReference.load()
+        let expected = try #require(ref.mel_examples[stem])
+        let f = GemmaAudioProcessor.features(samples: try GemmaAudioProcessor.loadMono16k(AudioReference.url(stem)))
+        #expect(f.validFrames == expected.count)
+        var maxDiff: Float = 0
+        for (t, row) in expected.enumerated() {
+            for (m, v) in row.enumerated() { maxDiff = max(maxDiff, abs(f.mel[t * 128 + m] - v)) }
+        }
+        #expect(maxDiff < 1e-3, "max |mel diff| \(maxDiff)")
+    }
+
+    @Test func frameAndTokenCountsMatchHF() throws {
+        for item in try AudioReference.load().items where AudioReference.available(item.stem) {
+            let samples = try GemmaAudioProcessor.loadMono16k(AudioReference.url(item.stem))
+            #expect(samples.count == item.samples, "\(item.stem) samples")
+            let f = GemmaAudioProcessor.features(samples: samples)
+            #expect(f.validFrames == item.mel_frames, "\(item.stem) frames")
+            #expect(f.tokenCount == item.audio_tokens, "\(item.stem) tokens")
+        }
+    }
+}
+
+@Suite(.enabled(if: modelURL != nil && tokenizerFolder != nil, "set EMBEDDINGGEMMA2_MODEL to an exported .aimodel"))
+struct EmbeddingGemma2AudioTests {
+    @Test func audioParityWithFP32Reference() async throws {
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        try #require(await embedder.supportsAudio)
+        for item in try AudioReference.load().items where AudioReference.available(item.stem) {
+            let v = try await embedder.embed(audioAt: AudioReference.url(item.stem))
+            let cos = EmbeddingGemma2.cosine(v, item.embedding)
+            #expect(cos >= 0.999, "cos \(cos) for \(item.stem)")
+        }
+    }
+
+    /// text -> audio over the spoken clips (the fp32 reference gets 6 of 6).
+    @Test func captionFindsItsSpeech() async throws {
+        let speech = try AudioReference.load().items.filter { $0.stem.hasPrefix("speech") && AudioReference.available($0.stem) }
+        try #require(speech.count >= 2, "speech clips missing: run make_audio_reference.py")
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        var clips: [[Float]] = []
+        for item in speech { clips.append(try await embedder.embed(audioAt: AudioReference.url(item.stem))) }
+        for (i, item) in speech.enumerated() {
+            let q = try await embedder.embed(item.caption)
+            let best = clips.indices.max { EmbeddingGemma2.cosine(q, clips[$0]) < EmbeddingGemma2.cosine(q, clips[$1]) }
+            #expect(best == i, "'\(item.caption)' matched \(speech[best!].stem)")
+        }
+    }
+
+    /// audio <-> audio: a half-volume copy of the tone is nearest to the original tone, at 768 and 256.
+    @Test(arguments: [768, 256])
+    func quieterCopyFindsOriginal(dimension: Int) async throws {
+        let embedder = try await EmbeddingGemma2ModelTests.embedder()
+        let tone = try GemmaAudioProcessor.loadMono16k(AudioReference.url("tone_440hz"))
+        let copy = try await embedder.embed(audioSamples: tone.map { $0 * 0.5 }, dimension: dimension)
+        var scores: [(String, Float)] = []
+        for stem in ["tone_440hz", "white_noise", "chirp_rising"] {
+            let v = try await embedder.embed(audioAt: AudioReference.url(stem), dimension: dimension)
+            scores.append((stem, EmbeddingGemma2.cosine(copy, v)))
+        }
+        #expect(scores.max { $0.1 < $1.1 }?.0 == "tone_440hz", "\(scores)")
+    }
+}

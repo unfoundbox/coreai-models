@@ -38,6 +38,7 @@ from coreai_models.models.ios.embedding_gemma2_text import (
     load_scales,
     load_weights,
 )
+from coreai_models.models.ios.embedding_gemma2_audio import AudioEncoder, load_audio_weights
 from coreai_models.models.ios.embedding_gemma2_vision import (
     HEAD_DIM,
     VisionEncoder,
@@ -56,6 +57,8 @@ NUM_PATCHES = 2520  # image budget (280 soft tokens)
 VIDEO_PATCHES = 1260  # per-frame budget for video (140 soft tokens)
 IMAGE_TOKEN_ID = 258880
 VIDEO_TOKEN_ID = 258884
+AUDIO_TOKEN_ID = 258881
+MEL_BINS = 128
 VISION_HIDDEN = 768
 
 
@@ -73,6 +76,10 @@ def positions_fn(p: int) -> str:
 
 def image_fn(p: int) -> str:
     return f"embed_image_{p}"
+
+
+def audio_fn(mel_frames: int) -> str:
+    return f"embed_audio_{mel_frames}"
 
 
 POSITIONS_FN = positions_fn(NUM_PATCHES)
@@ -115,7 +122,28 @@ def build_vision(budgets: list[int]) -> tuple[VisionPositions, dict[int, VisionE
     return positions.eval().half(), encoders
 
 
-def convert(text, vision, debug: bool):
+def build_audio(buckets: list[int]) -> dict[int, AudioEncoder]:
+    """One audio encoder per mel-frame bucket; parameters and constants shared."""
+    scales = load_scales(SCALES, "audio")
+    base = AudioEncoder(buckets[0], scales)
+    load_audio_weights(base, weights_path())
+    encoders = {buckets[0]: base.eval().half()}
+    shared = dict(encoders[buckets[0]].named_parameters())
+    shared.update({k: v for k, v in encoders[buckets[0]].named_buffers()})
+    for t in buckets[1:]:
+        enc = AudioEncoder(t, scales).eval().half()
+        for name, tensor in shared.items():
+            owner, _, leaf = name.rpartition(".")
+            mod = enc.get_submodule(owner) if owner else enc
+            if isinstance(tensor, torch.nn.Parameter):
+                setattr(mod, leaf, tensor)
+            else:
+                getattr(mod, leaf).copy_(tensor)
+        encoders[t] = enc
+    return encoders
+
+
+def convert(text, vision, debug: bool, audio=None):
     decomp = get_decomp_table()
     converter = TorchConverter(mode=TorchConverter.Mode.DEBUG if debug else TorchConverter.Mode.RELEASE)
 
@@ -146,11 +174,17 @@ def convert(text, vision, debug: bool):
                 add(venc, (f16(1, VISION_HIDDEN, 1, p), f16(1, VISION_HIDDEN, 1, p),
                            f16(1, HEAD_DIM, 1, p), f16(1, HEAD_DIM, 1, p), f16(1, p)),
                     ["pixel_patches", "pos_embeds", "rope_cos", "rope_sin", "patch_mask"], ["soft_tokens"], image_fn(p))
+        if audio:
+            for t, enc in audio.items():
+                mask = torch.zeros(1, t, dtype=torch.float16)
+                mask[0, :100] = 1
+                add(enc, (torch.zeros(1, 1, t, MEL_BINS, dtype=torch.float16), mask),
+                    ["mel", "frame_mask"], ["soft_tokens"], audio_fn(t))
     return converter.to_coreai()
 
 
 async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None, compute: str,
-                video_inputs: Path | None = None) -> None:
+                video_inputs: Path | None = None, audio_inputs: Path | None = None) -> None:
     from coreai.runtime import AIModel, ComputeUnitKind, NDArray, SpecializationOptions
 
     kinds = {"neural-engine": ComputeUnitKind.neural_engine(), "gpu": ComputeUnitKind.gpu()}
@@ -166,7 +200,7 @@ async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None,
     async def text_embedding(ids: np.ndarray, soft: np.ndarray | None = None) -> tuple[np.ndarray, int, float]:
         n = len(ids)
         b = next(b for b in sorted(txt_fns) if n <= b)
-        slots = (ids == IMAGE_TOKEN_ID) | (ids == VIDEO_TOKEN_ID)
+        slots = (ids == IMAGE_TOKEN_ID) | (ids == VIDEO_TOKEN_ID) | (ids == AUDIO_TOKEN_ID)
         x = np.zeros((1, b), dtype=np.int32)
         x[0, :n] = np.where(slots, 0, ids)
         m = np.zeros((1, b), dtype=np.float16)
@@ -228,6 +262,27 @@ async def check(asset_path: Path, buckets: list[int], image_inputs: Path | None,
                   f"vision {dt_vis * 1000:.0f} ms + text {dt_txt * 1000:.0f} ms")
         print(f"[check] video min cos {min(cos):.6f}  below 0.999: {sum(c < 0.999 for c in cos)}/{len(cos)}")
 
+    if audio_inputs and txt_fns and any(n.startswith("embed_audio_") for n in names):
+        import json
+        ref = json.loads((FIX / "audio_reference.json").read_text())["items"]
+        data = np.load(audio_inputs)
+        cos = []
+        for item in ref:
+            stem = item["stem"]
+            mel, mask, ids = data[f"{stem}__mel"], data[f"{stem}__mask"], data[f"{stem}__ids"]
+            fn = model.load_function(audio_fn(mel.shape[0]))
+            t0 = time.time()
+            out = await fn({"mel": NDArray(np.ascontiguousarray(mel[None, None].astype(np.float16))),
+                            "frame_mask": NDArray(np.ascontiguousarray(mask[None]))})
+            dt_aud = time.time() - t0
+            n = int((ids == AUDIO_TOKEN_ID).sum())
+            soft = np.asarray(out["soft_tokens"].numpy(), dtype=np.float16)[0, :, 0, :n]
+            v, b, dt_txt = await text_embedding(ids, soft)
+            cos.append(float(np.dot(v, np.array(item["embedding"]))))
+            print(f"[check] audio {stem:20s} mel {mel.shape[0]:4d} tokens {n:3d}  embedding cos {cos[-1]:.6f}  "
+                  f"audio {dt_aud * 1000:.0f} ms + text({b}) {dt_txt * 1000:.0f} ms")
+        print(f"[check] audio min cos {min(cos):.6f}  below 0.999: {sum(c < 0.999 for c in cos)}/{len(cos)}")
+
     if image_inputs and POSITIONS_FN in names:
         pos_fn, img_fn = model.load_function(POSITIONS_FN), model.load_function(IMAGE_FN)
         ref = np.load(FIX / "image_reference.npz", allow_pickle=True)
@@ -268,13 +323,15 @@ def main() -> None:
     ap.add_argument("--buckets", default="128,512,2048,4608")
     ap.add_argument("--image-budgets", default=f"{NUM_PATCHES},{VIDEO_PATCHES}",
                     help="vision patch budgets: 2520 = images (280 tokens), 1260 = video frames (140 tokens)")
-    ap.add_argument("--modalities", default="text,image")
+    ap.add_argument("--modalities", default="text,image,audio")
     ap.add_argument("--output-dir", type=Path, default=REPO_ROOT / "exports")
     ap.add_argument("--name", default="embeddinggemma2_fp16")
     ap.add_argument("--check", action="store_true", help="parity vs fp32 fixtures (needs USE_OS_COREAI=1)")
     ap.add_argument("--check-only", type=Path, default=None, help="skip export; check this existing .aimodel")
     ap.add_argument("--image-inputs", type=Path, default=None, help="npz from check_image_model.py --dump-inputs")
     ap.add_argument("--video-inputs", type=Path, default=None, help="npz from check_video_model.py --dump-inputs")
+    ap.add_argument("--audio-inputs", type=Path, default=None, help="npz from check_audio_model.py --dump-inputs")
+    ap.add_argument("--audio-buckets", default="1024,3072", help="mel-frame buckets (100 frames = 1 s; 4 frames = 1 token)")
     ap.add_argument("--compute", default="neural-engine", choices=["neural-engine", "gpu", "default"])
     ap.add_argument("--debug-info", action="store_true")
     args = ap.parse_args()
@@ -286,14 +343,15 @@ def main() -> None:
         text = build_text(buckets) if "text" in modalities else None
         budgets = [int(p) for p in args.image_budgets.split(",")]
         vision = build_vision(budgets) if "image" in modalities else None
-        program = convert(text, vision, debug=args.debug_info)
+        audio = build_audio([int(t) for t in args.audio_buckets.split(",")]) if "audio" in modalities else None
+        program = convert(text, vision, debug=args.debug_info, audio=audio)
         args.output_dir.mkdir(parents=True, exist_ok=True)
         path = args.output_dir / f"{args.name}.aimodel"
         program.save_asset(path)
         size = sum(p.stat().st_size for p in path.rglob("*") if p.is_file()) if path.is_dir() else path.stat().st_size
         print(f"[export] saved {path} ({size / 2**20:.0f} MiB)")
     if args.check or args.check_only:
-        asyncio.run(check(path, buckets, args.image_inputs, args.compute, args.video_inputs))
+        asyncio.run(check(path, buckets, args.image_inputs, args.compute, args.video_inputs, args.audio_inputs))
 
 
 if __name__ == "__main__":

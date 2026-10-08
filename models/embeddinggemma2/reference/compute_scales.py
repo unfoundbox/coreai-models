@@ -23,12 +23,15 @@ def scale_for(max_in: float) -> float:
 def main() -> None:
     text = json.loads((FIX / "text_overflow.json").read_text())["modules"]
     image = json.loads((FIX / "image_overflow.json").read_text())["modules"]
+    extra = [json.loads((FIX / f).read_text())["modules"] for f in ("video_overflow.json", "audio_overflow.json")
+             if (FIX / f).exists()]
 
     text_max: dict[str, float] = {n: s["in"] for n, s in text.items() if "in" in s}
-    for n, s in image.items():
-        if n.startswith("text.") and "in" in s:
-            key = n[len("text."):]
-            text_max[key] = max(text_max.get(key, 0.0), s["in"])
+    for run in [image, *extra]:
+        for n, s in run.items():
+            if n.startswith("text.") and "in" in s:
+                key = n[len("text."):]
+                text_max[key] = max(text_max.get(key, 0.0), s["in"])
 
     vision_max: dict[str, float] = {}
     for n, s in image.items():
@@ -39,14 +42,31 @@ def main() -> None:
         elif n == "embed_vision.embedding_pre_projection_norm":
             vision_max["embedding_pre_projection_norm"] = s["in"] / POOLER_SCALE
 
+    for run in extra:  # video runs go through the same vision tower
+        for n, s in run.items():
+            if n.startswith("vision.") and "in" in s:
+                key = n[len("vision."):]
+                vision_max[key] = max(vision_max.get(key, 0.0), s["in"])
+
+    audio_max: dict[str, float] = {}
+    for run in extra:
+        for n, s in run.items():
+            if "in" not in s:
+                continue
+            if n.startswith("audio."):
+                audio_max[n[len("audio."):]] = max(audio_max.get(n[len("audio."):], 0.0), s["in"])
+            elif n == "embed_audio.embedding_pre_projection_norm":
+                audio_max["embedding_pre_projection_norm"] = s["in"]
+
     out = {
         "target_max_after_scale": TARGET,
         "text": {n: scale_for(v) for n, v in sorted(text_max.items())},
         "vision": {n: scale_for(v) for n, v in sorted(vision_max.items())},
-        "max_input": {"text": text_max, "vision": vision_max},
+        "audio": {n: scale_for(v) for n, v in sorted(audio_max.items())},
+        "max_input": {"text": text_max, "vision": vision_max, "audio": audio_max},
     }
     (FIX / "fp16_scales.json").write_text(json.dumps(out, indent=1))
-    for group in ("text", "vision"):
+    for group in ("text", "vision", "audio"):
         big = {n: s for n, s in out[group].items() if s > 1}
         print(f"{group}: {len(out[group])} norms, {len(big)} prescaled, max S {max(out[group].values()):.0f}")
 

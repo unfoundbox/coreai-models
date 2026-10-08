@@ -60,6 +60,9 @@ struct Embed: AsyncParsableCommand {
     @Option(name: .long, help: "Video file to embed (repeatable): 1 frame per second, at most 32 frames.")
     var video: [String] = []
 
+    @Option(name: .long, help: "Audio file to embed (repeatable): first 30 s, resampled to 16 kHz mono.")
+    var audio: [String] = []
+
     @Argument(help: "Texts to embed.")
     var texts: [String] = []
 
@@ -79,6 +82,13 @@ struct Embed: AsyncParsableCommand {
             let elapsed = ContinuousClock.now - start
             let values = vector.map { String(format: "%.6f", $0) }.joined(separator: ",")
             print("{\"video\":\(jsonString(path)),\"dim\":\(vector.count),\"ms\":\(milliseconds(elapsed)),\"embedding\":[\(values)]}")
+        }
+        for path in audio {
+            let start = ContinuousClock.now
+            let vector = try await embedder.embed(audioAt: URL(filePath: path), dimension: options.dim)
+            let elapsed = ContinuousClock.now - start
+            let values = vector.map { String(format: "%.6f", $0) }.joined(separator: ",")
+            print("{\"audio\":\(jsonString(path)),\"dim\":\(vector.count),\"ms\":\(milliseconds(elapsed)),\"embedding\":[\(values)]}")
         }
         for text in texts {
             let start = ContinuousClock.now
@@ -128,14 +138,14 @@ struct Search: AsyncParsableCommand {
 
 struct MediaSearch: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "media-search", abstract: "Rank the images and videos in a folder against a text query.")
+        commandName: "media-search", abstract: "Rank the images, videos and audio files in a folder against a text query.")
 
     @OptionGroup var options: ModelOptions
 
     @Option(name: .long, help: "Query text.")
     var query: String
 
-    @Option(name: .long, help: "Folder of images (png, jpg, jpeg, heic) and videos (mp4, mov, m4v).")
+    @Option(name: .long, help: "Folder of images (png, jpg, jpeg, heic), videos (mp4, mov, m4v) and audio (wav, m4a, mp3, aiff, caf).")
     var folder: String
 
     @Option(name: .long, help: "Number of results.")
@@ -143,16 +153,22 @@ struct MediaSearch: AsyncParsableCommand {
 
     func run() async throws {
         let imageTypes: Set = ["png", "jpg", "jpeg", "heic"], videoTypes: Set = ["mp4", "mov", "m4v"]
+        let audioTypes: Set = ["wav", "m4a", "mp3", "aiff", "aif", "caf"]
         let files = try FileManager.default.contentsOfDirectory(at: URL(filePath: folder), includingPropertiesForKeys: nil)
-            .filter { imageTypes.union(videoTypes).contains($0.pathExtension.lowercased()) }
+            .filter { imageTypes.union(videoTypes).union(audioTypes).contains($0.pathExtension.lowercased()) }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
         let embedder = try await options.load()
         let start = ContinuousClock.now
         var vectors: [[Float]] = []
         for file in files {
-            vectors.append(videoTypes.contains(file.pathExtension.lowercased())
-                ? try await embedder.embed(videoAt: file, dimension: options.dim)
-                : try await embedder.embed(imageAt: file, dimension: options.dim))
+            let ext = file.pathExtension.lowercased()
+            if videoTypes.contains(ext) {
+                vectors.append(try await embedder.embed(videoAt: file, dimension: options.dim))
+            } else if audioTypes.contains(ext) {
+                vectors.append(try await embedder.embed(audioAt: file, dimension: options.dim))
+            } else {
+                vectors.append(try await embedder.embed(imageAt: file, dimension: options.dim))
+            }
         }
         let q = try await embedder.embed(query, task: .none, dimension: options.dim)
         let elapsed = ContinuousClock.now - start

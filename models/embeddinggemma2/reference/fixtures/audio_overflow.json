@@ -1,0 +1,3441 @@
+{
+ "modules": {
+  "text.embed_tokens": {
+   "out": 8.883028984069824
+  },
+  "audio.subsample_conv_projection.layer0.conv": {
+   "out": 18.734636306762695
+  },
+  "audio.subsample_conv_projection.layer0.norm": {
+   "out": 21.1498966217041,
+   "in": 18.734636306762695
+  },
+  "audio.subsample_conv_projection.layer0.act": {
+   "out": 19.401010513305664
+  },
+  "audio.subsample_conv_projection.layer0": {
+   "out": 19.401010513305664
+  },
+  "audio.subsample_conv_projection.layer1.conv": {
+   "out": 46.343223571777344
+  },
+  "audio.subsample_conv_projection.layer1.norm": {
+   "out": 36.24256134033203,
+   "in": 46.343223571777344
+  },
+  "audio.subsample_conv_projection.layer1.act": {
+   "out": 27.727949142456055
+  },
+  "audio.subsample_conv_projection.layer1": {
+   "out": 27.727949142456055
+  },
+  "audio.subsample_conv_projection.input_proj_linear": {
+   "out": 148.76861572265625
+  },
+  "audio.subsample_conv_projection": {
+   "out": 148.76861572265625
+  },
+  "audio.rel_pos_enc": {
+   "out": 1.0
+  },
+  "audio.layers.0.feed_forward1.pre_layer_norm": {
+   "out": 34.98712158203125,
+   "in": 148.76861572265625
+  },
+  "audio.layers.0.feed_forward1.ffw_layer_1.linear": {
+   "out": 31.396995544433594
+  },
+  "audio.layers.0.feed_forward1.ffw_layer_1": {
+   "out": 31.396995544433594
+  },
+  "audio.layers.0.feed_forward1.act_fn": {
+   "out": 23.852218627929688
+  },
+  "audio.layers.0.feed_forward1.ffw_layer_2.linear": {
+   "out": 10.738064765930176
+  },
+  "audio.layers.0.feed_forward1.ffw_layer_2": {
+   "out": 10.738064765930176
+  },
+  "audio.layers.0.feed_forward1.post_layer_norm": {
+   "out": 191.47764587402344,
+   "in": 10.738064765930176
+  },
+  "audio.layers.0.feed_forward1": {
+   "out": 166.08863830566406
+  },
+  "audio.layers.0.norm_pre_attn": {
+   "out": 183.94215393066406,
+   "in": 166.08863830566406
+  },
+  "audio.layers.0.self_attn.q_proj.linear": {
+   "out": 33.03977584838867
+  },
+  "audio.layers.0.self_attn.q_proj": {
+   "out": 33.03977584838867
+  },
+  "audio.layers.0.self_attn.k_proj.linear": {
+   "out": 34.641075134277344
+  },
+  "audio.layers.0.self_attn.k_proj": {
+   "out": 34.25
+  },
+  "audio.layers.0.self_attn.v_proj.linear": {
+   "out": 42.8162956237793
+  },
+  "audio.layers.0.self_attn.v_proj": {
+   "out": 34.25
+  },
+  "audio.layers.0.self_attn.relative_k_proj": {
+   "out": 50.25264358520508
+  },
+  "audio.layers.0.self_attn.post.linear": {
+   "out": 117.05186462402344
+  },
+  "audio.layers.0.self_attn.post": {
+   "out": 101.5
+  },
+  "audio.layers.0.self_attn": {
+   "out": 101.5
+  },
+  "audio.layers.0.norm_post_attn": {
+   "out": 155.48068237304688,
+   "in": 101.5
+  },
+  "audio.layers.0.lconv1d.pre_layer_norm": {
+   "out": 375.6667175292969,
+   "in": 313.70184326171875
+  },
+  "audio.layers.0.lconv1d.linear_start.linear": {
+   "out": 55.753963470458984
+  },
+  "audio.layers.0.lconv1d.linear_start": {
+   "out": 29.625
+  },
+  "audio.layers.0.lconv1d.depthwise_conv1d": {
+   "out": 171.68057250976562
+  },
+  "audio.layers.0.lconv1d.conv_norm": {
+   "out": 118.57716369628906,
+   "in": 171.68057250976562
+  },
+  "audio.layers.0.lconv1d.act_fn": {
+   "out": 50.66023635864258
+  },
+  "audio.layers.0.lconv1d.linear_end.linear": {
+   "out": 14.562298774719238
+  },
+  "audio.layers.0.lconv1d.linear_end": {
+   "out": 6.25
+  },
+  "audio.layers.0.lconv1d": {
+   "out": 314.5582580566406
+  },
+  "audio.layers.0.feed_forward2.pre_layer_norm": {
+   "out": 9.164009094238281,
+   "in": 314.5582580566406
+  },
+  "audio.layers.0.feed_forward2.ffw_layer_1.linear": {
+   "out": 18.745655059814453
+  },
+  "audio.layers.0.feed_forward2.ffw_layer_1": {
+   "out": 18.745655059814453
+  },
+  "audio.layers.0.feed_forward2.act_fn": {
+   "out": 17.486909866333008
+  },
+  "audio.layers.0.feed_forward2.ffw_layer_2.linear": {
+   "out": 12.844491004943848
+  },
+  "audio.layers.0.feed_forward2.ffw_layer_2": {
+   "out": 12.844491004943848
+  },
+  "audio.layers.0.feed_forward2.post_layer_norm": {
+   "out": 163.00204467773438,
+   "in": 12.844491004943848
+  },
+  "audio.layers.0.feed_forward2": {
+   "out": 325.97174072265625
+  },
+  "audio.layers.0.norm_out": {
+   "out": 236.65797424316406,
+   "in": 325.97174072265625
+  },
+  "audio.layers.0": {
+   "out": 236.65797424316406
+  },
+  "audio.layers.1.feed_forward1.pre_layer_norm": {
+   "out": 10.74659538269043,
+   "in": 236.65797424316406
+  },
+  "audio.layers.1.feed_forward1.ffw_layer_1.linear": {
+   "out": 23.423328399658203
+  },
+  "audio.layers.1.feed_forward1.ffw_layer_1": {
+   "out": 23.423328399658203
+  },
+  "audio.layers.1.feed_forward1.act_fn": {
+   "out": 20.38574981689453
+  },
+  "audio.layers.1.feed_forward1.ffw_layer_2.linear": {
+   "out": 11.334054946899414
+  },
+  "audio.layers.1.feed_forward1.ffw_layer_2": {
+   "out": 11.334054946899414
+  },
+  "audio.layers.1.feed_forward1.post_layer_norm": {
+   "out": 103.87471008300781,
+   "in": 11.334054946899414
+  },
+  "audio.layers.1.feed_forward1": {
+   "out": 237.29293823242188
+  },
+  "audio.layers.1.norm_pre_attn": {
+   "out": 43.1663932800293,
+   "in": 237.29293823242188
+  },
+  "audio.layers.1.self_attn.q_proj.linear": {
+   "out": 17.19036865234375
+  },
+  "audio.layers.1.self_attn.q_proj": {
+   "out": 17.19036865234375
+  },
+  "audio.layers.1.self_attn.k_proj.linear": {
+   "out": 18.871864318847656
+  },
+  "audio.layers.1.self_attn.k_proj": {
+   "out": 18.871864318847656
+  },
+  "audio.layers.1.self_attn.v_proj.linear": {
+   "out": 29.182058334350586
+  },
+  "audio.layers.1.self_attn.v_proj": {
+   "out": 22.0
+  },
+  "audio.layers.1.self_attn.relative_k_proj": {
+   "out": 42.674686431884766
+  },
+  "audio.layers.1.self_attn.post.linear": {
+   "out": 83.61514282226562
+  },
+  "audio.layers.1.self_attn.post": {
+   "out": 58.0
+  },
+  "audio.layers.1.self_attn": {
+   "out": 58.0
+  },
+  "audio.layers.1.norm_post_attn": {
+   "out": 48.51988983154297,
+   "in": 58.0
+  },
+  "audio.layers.1.lconv1d.pre_layer_norm": {
+   "out": 452.0897216796875,
+   "in": 249.8641815185547
+  },
+  "audio.layers.1.lconv1d.linear_start.linear": {
+   "out": 29.38544273376465
+  },
+  "audio.layers.1.lconv1d.linear_start": {
+   "out": 26.625
+  },
+  "audio.layers.1.lconv1d.depthwise_conv1d": {
+   "out": 115.65187072753906
+  },
+  "audio.layers.1.lconv1d.conv_norm": {
+   "out": 606.8694458007812,
+   "in": 115.65187072753906
+  },
+  "audio.layers.1.lconv1d.act_fn": {
+   "out": 32.34483337402344
+  },
+  "audio.layers.1.lconv1d.linear_end.linear": {
+   "out": 16.76014518737793
+  },
+  "audio.layers.1.lconv1d.linear_end": {
+   "out": 8.125
+  },
+  "audio.layers.1.lconv1d": {
+   "out": 251.7755126953125
+  },
+  "audio.layers.1.feed_forward2.pre_layer_norm": {
+   "out": 9.672798156738281,
+   "in": 251.7755126953125
+  },
+  "audio.layers.1.feed_forward2.ffw_layer_1.linear": {
+   "out": 16.579383850097656
+  },
+  "audio.layers.1.feed_forward2.ffw_layer_1": {
+   "out": 16.579383850097656
+  },
+  "audio.layers.1.feed_forward2.act_fn": {
+   "out": 16.579381942749023
+  },
+  "audio.layers.1.feed_forward2.ffw_layer_2.linear": {
+   "out": 13.008367538452148
+  },
+  "audio.layers.1.feed_forward2.ffw_layer_2": {
+   "out": 13.008367538452148
+  },
+  "audio.layers.1.feed_forward2.post_layer_norm": {
+   "out": 172.05258178710938,
+   "in": 13.008367538452148
+  },
+  "audio.layers.1.feed_forward2": {
+   "out": 278.1413879394531
+  },
+  "audio.layers.1.norm_out": {
+   "out": 293.2154235839844,
+   "in": 278.1413879394531
+  },
+  "audio.layers.1": {
+   "out": 293.2154235839844
+  },
+  "audio.layers.2.feed_forward1.pre_layer_norm": {
+   "out": 12.882052421569824,
+   "in": 293.2154235839844
+  },
+  "audio.layers.2.feed_forward1.ffw_layer_1.linear": {
+   "out": 22.562156677246094
+  },
+  "audio.layers.2.feed_forward1.ffw_layer_1": {
+   "out": 22.562156677246094
+  },
+  "audio.layers.2.feed_forward1.act_fn": {
+   "out": 22.562156677246094
+  },
+  "audio.layers.2.feed_forward1.ffw_layer_2.linear": {
+   "out": 15.364846229553223
+  },
+  "audio.layers.2.feed_forward1.ffw_layer_2": {
+   "out": 15.364846229553223
+  },
+  "audio.layers.2.feed_forward1.post_layer_norm": {
+   "out": 25.886516571044922,
+   "in": 15.364846229553223
+  },
+  "audio.layers.2.feed_forward1": {
+   "out": 286.7131042480469
+  },
+  "audio.layers.2.norm_pre_attn": {
+   "out": 44.67135238647461,
+   "in": 286.7131042480469
+  },
+  "audio.layers.2.self_attn.q_proj.linear": {
+   "out": 13.901741981506348
+  },
+  "audio.layers.2.self_attn.q_proj": {
+   "out": 13.901741981506348
+  },
+  "audio.layers.2.self_attn.k_proj.linear": {
+   "out": 14.042119026184082
+  },
+  "audio.layers.2.self_attn.k_proj": {
+   "out": 14.042119026184082
+  },
+  "audio.layers.2.self_attn.v_proj.linear": {
+   "out": 32.935386657714844
+  },
+  "audio.layers.2.self_attn.v_proj": {
+   "out": 20.875
+  },
+  "audio.layers.2.self_attn.relative_k_proj": {
+   "out": 49.005210876464844
+  },
+  "audio.layers.2.self_attn.post.linear": {
+   "out": 73.11111450195312
+  },
+  "audio.layers.2.self_attn.post": {
+   "out": 61.75
+  },
+  "audio.layers.2.self_attn": {
+   "out": 61.75
+  },
+  "audio.layers.2.norm_post_attn": {
+   "out": 37.05970001220703,
+   "in": 61.75
+  },
+  "audio.layers.2.lconv1d.pre_layer_norm": {
+   "out": 17.752750396728516,
+   "in": 314.10955810546875
+  },
+  "audio.layers.2.lconv1d.linear_start.linear": {
+   "out": 23.285961151123047
+  },
+  "audio.layers.2.lconv1d.linear_start": {
+   "out": 23.285961151123047
+  },
+  "audio.layers.2.lconv1d.depthwise_conv1d": {
+   "out": 84.92664337158203
+  },
+  "audio.layers.2.lconv1d.conv_norm": {
+   "out": 509.6209411621094,
+   "in": 84.92664337158203
+  },
+  "audio.layers.2.lconv1d.act_fn": {
+   "out": 40.047340393066406
+  },
+  "audio.layers.2.lconv1d.linear_end.linear": {
+   "out": 11.780214309692383
+  },
+  "audio.layers.2.lconv1d.linear_end": {
+   "out": 6.334008693695068
+  },
+  "audio.layers.2.lconv1d": {
+   "out": 320.06170654296875
+  },
+  "audio.layers.2.feed_forward2.pre_layer_norm": {
+   "out": 11.780813217163086,
+   "in": 320.06170654296875
+  },
+  "audio.layers.2.feed_forward2.ffw_layer_1.linear": {
+   "out": 19.660634994506836
+  },
+  "audio.layers.2.feed_forward2.ffw_layer_1": {
+   "out": 19.660634994506836
+  },
+  "audio.layers.2.feed_forward2.act_fn": {
+   "out": 18.223581314086914
+  },
+  "audio.layers.2.feed_forward2.ffw_layer_2.linear": {
+   "out": 9.450790405273438
+  },
+  "audio.layers.2.feed_forward2.ffw_layer_2": {
+   "out": 9.450790405273438
+  },
+  "audio.layers.2.feed_forward2.post_layer_norm": {
+   "out": 105.10457611083984,
+   "in": 9.450790405273438
+  },
+  "audio.layers.2.feed_forward2": {
+   "out": 345.47503662109375
+  },
+  "audio.layers.2.norm_out": {
+   "out": 132.0194549560547,
+   "in": 345.47503662109375
+  },
+  "audio.layers.2": {
+   "out": 132.0194549560547
+  },
+  "audio.layers.3.feed_forward1.pre_layer_norm": {
+   "out": 14.909137725830078,
+   "in": 132.0194549560547
+  },
+  "audio.layers.3.feed_forward1.ffw_layer_1.linear": {
+   "out": 25.278043746948242
+  },
+  "audio.layers.3.feed_forward1.ffw_layer_1": {
+   "out": 25.278043746948242
+  },
+  "audio.layers.3.feed_forward1.act_fn": {
+   "out": 24.232702255249023
+  },
+  "audio.layers.3.feed_forward1.ffw_layer_2.linear": {
+   "out": 38.596431732177734
+  },
+  "audio.layers.3.feed_forward1.ffw_layer_2": {
+   "out": 38.596431732177734
+  },
+  "audio.layers.3.feed_forward1.post_layer_norm": {
+   "out": 22.115482330322266,
+   "in": 38.596431732177734
+  },
+  "audio.layers.3.feed_forward1": {
+   "out": 137.1002197265625
+  },
+  "audio.layers.3.norm_pre_attn": {
+   "out": 196.9446563720703,
+   "in": 137.1002197265625
+  },
+  "audio.layers.3.self_attn.q_proj.linear": {
+   "out": 11.528177261352539
+  },
+  "audio.layers.3.self_attn.q_proj": {
+   "out": 11.528177261352539
+  },
+  "audio.layers.3.self_attn.k_proj.linear": {
+   "out": 10.490347862243652
+  },
+  "audio.layers.3.self_attn.k_proj": {
+   "out": 10.490347862243652
+  },
+  "audio.layers.3.self_attn.v_proj.linear": {
+   "out": 30.511110305786133
+  },
+  "audio.layers.3.self_attn.v_proj": {
+   "out": 18.75
+  },
+  "audio.layers.3.self_attn.relative_k_proj": {
+   "out": 67.74775695800781
+  },
+  "audio.layers.3.self_attn.post.linear": {
+   "out": 69.02460479736328
+  },
+  "audio.layers.3.self_attn.post": {
+   "out": 46.0
+  },
+  "audio.layers.3.self_attn": {
+   "out": 46.0
+  },
+  "audio.layers.3.norm_post_attn": {
+   "out": 29.257061004638672,
+   "in": 46.0
+  },
+  "audio.layers.3.lconv1d.pre_layer_norm": {
+   "out": 14.781142234802246,
+   "in": 158.64434814453125
+  },
+  "audio.layers.3.lconv1d.linear_start.linear": {
+   "out": 35.49533462524414
+  },
+  "audio.layers.3.lconv1d.linear_start": {
+   "out": 25.0
+  },
+  "audio.layers.3.lconv1d.depthwise_conv1d": {
+   "out": 98.45037841796875
+  },
+  "audio.layers.3.lconv1d.conv_norm": {
+   "out": 41.04859924316406,
+   "in": 98.45037841796875
+  },
+  "audio.layers.3.lconv1d.act_fn": {
+   "out": 26.443771362304688
+  },
+  "audio.layers.3.lconv1d.linear_end.linear": {
+   "out": 11.107373237609863
+  },
+  "audio.layers.3.lconv1d.linear_end": {
+   "out": 7.9375
+  },
+  "audio.layers.3.lconv1d": {
+   "out": 161.0957489013672
+  },
+  "audio.layers.3.feed_forward2.pre_layer_norm": {
+   "out": 14.089959144592285,
+   "in": 161.0957489013672
+  },
+  "audio.layers.3.feed_forward2.ffw_layer_1.linear": {
+   "out": 33.346832275390625
+  },
+  "audio.layers.3.feed_forward2.ffw_layer_1": {
+   "out": 29.5
+  },
+  "audio.layers.3.feed_forward2.act_fn": {
+   "out": 29.148738861083984
+  },
+  "audio.layers.3.feed_forward2.ffw_layer_2.linear": {
+   "out": 14.09892749786377
+  },
+  "audio.layers.3.feed_forward2.ffw_layer_2": {
+   "out": 14.09892749786377
+  },
+  "audio.layers.3.feed_forward2.post_layer_norm": {
+   "out": 201.7493133544922,
+   "in": 14.09892749786377
+  },
+  "audio.layers.3.feed_forward2": {
+   "out": 177.4528350830078
+  },
+  "audio.layers.3.norm_out": {
+   "out": 203.1580047607422,
+   "in": 177.4528350830078
+  },
+  "audio.layers.3": {
+   "out": 203.1580047607422
+  },
+  "audio.layers.4.feed_forward1.pre_layer_norm": {
+   "out": 11.403302192687988,
+   "in": 203.1580047607422
+  },
+  "audio.layers.4.feed_forward1.ffw_layer_1.linear": {
+   "out": 21.42474937438965
+  },
+  "audio.layers.4.feed_forward1.ffw_layer_1": {
+   "out": 21.42474937438965
+  },
+  "audio.layers.4.feed_forward1.act_fn": {
+   "out": 21.42474937438965
+  },
+  "audio.layers.4.feed_forward1.ffw_layer_2.linear": {
+   "out": 22.281347274780273
+  },
+  "audio.layers.4.feed_forward1.ffw_layer_2": {
+   "out": 22.281347274780273
+  },
+  "audio.layers.4.feed_forward1.post_layer_norm": {
+   "out": 207.22137451171875,
+   "in": 22.281347274780273
+  },
+  "audio.layers.4.feed_forward1": {
+   "out": 207.92477416992188
+  },
+  "audio.layers.4.norm_pre_attn": {
+   "out": 53.65563201904297,
+   "in": 207.92477416992188
+  },
+  "audio.layers.4.self_attn.q_proj.linear": {
+   "out": 12.0348482131958
+  },
+  "audio.layers.4.self_attn.q_proj": {
+   "out": 12.0348482131958
+  },
+  "audio.layers.4.self_attn.k_proj.linear": {
+   "out": 11.10569953918457
+  },
+  "audio.layers.4.self_attn.k_proj": {
+   "out": 11.10569953918457
+  },
+  "audio.layers.4.self_attn.v_proj.linear": {
+   "out": 9.281412124633789
+  },
+  "audio.layers.4.self_attn.v_proj": {
+   "out": 9.281412124633789
+  },
+  "audio.layers.4.self_attn.relative_k_proj": {
+   "out": 46.06797790527344
+  },
+  "audio.layers.4.self_attn.post.linear": {
+   "out": 52.2932243347168
+  },
+  "audio.layers.4.self_attn.post": {
+   "out": 52.2932243347168
+  },
+  "audio.layers.4.self_attn": {
+   "out": 52.2932243347168
+  },
+  "audio.layers.4.norm_post_attn": {
+   "out": 76.18050384521484,
+   "in": 52.2932243347168
+  },
+  "audio.layers.4.lconv1d.pre_layer_norm": {
+   "out": 21.306949615478516,
+   "in": 213.12188720703125
+  },
+  "audio.layers.4.lconv1d.linear_start.linear": {
+   "out": 17.04102897644043
+  },
+  "audio.layers.4.lconv1d.linear_start": {
+   "out": 17.04102897644043
+  },
+  "audio.layers.4.lconv1d.depthwise_conv1d": {
+   "out": 182.97817993164062
+  },
+  "audio.layers.4.lconv1d.conv_norm": {
+   "out": 49.09767532348633,
+   "in": 182.97817993164062
+  },
+  "audio.layers.4.lconv1d.act_fn": {
+   "out": 36.26145935058594
+  },
+  "audio.layers.4.lconv1d.linear_end.linear": {
+   "out": 16.960041046142578
+  },
+  "audio.layers.4.lconv1d.linear_end": {
+   "out": 7.8125
+  },
+  "audio.layers.4.lconv1d": {
+   "out": 220.87188720703125
+  },
+  "audio.layers.4.feed_forward2.pre_layer_norm": {
+   "out": 12.561716079711914,
+   "in": 220.87188720703125
+  },
+  "audio.layers.4.feed_forward2.ffw_layer_1.linear": {
+   "out": 25.496788024902344
+  },
+  "audio.layers.4.feed_forward2.ffw_layer_1": {
+   "out": 25.496788024902344
+  },
+  "audio.layers.4.feed_forward2.act_fn": {
+   "out": 25.496788024902344
+  },
+  "audio.layers.4.feed_forward2.ffw_layer_2.linear": {
+   "out": 9.405807495117188
+  },
+  "audio.layers.4.feed_forward2.ffw_layer_2": {
+   "out": 9.405807495117188
+  },
+  "audio.layers.4.feed_forward2.post_layer_norm": {
+   "out": 232.11138916015625,
+   "in": 9.405807495117188
+  },
+  "audio.layers.4.feed_forward2": {
+   "out": 233.72567749023438
+  },
+  "audio.layers.4.norm_out": {
+   "out": 313.7000427246094,
+   "in": 233.72567749023438
+  },
+  "audio.layers.4": {
+   "out": 313.7000427246094
+  },
+  "audio.layers.5.feed_forward1.pre_layer_norm": {
+   "out": 12.51214599609375,
+   "in": 313.7000427246094
+  },
+  "audio.layers.5.feed_forward1.ffw_layer_1.linear": {
+   "out": 18.767637252807617
+  },
+  "audio.layers.5.feed_forward1.ffw_layer_1": {
+   "out": 18.767637252807617
+  },
+  "audio.layers.5.feed_forward1.act_fn": {
+   "out": 16.498676300048828
+  },
+  "audio.layers.5.feed_forward1.ffw_layer_2.linear": {
+   "out": 12.299814224243164
+  },
+  "audio.layers.5.feed_forward1.ffw_layer_2": {
+   "out": 12.299814224243164
+  },
+  "audio.layers.5.feed_forward1.post_layer_norm": {
+   "out": 109.03021240234375,
+   "in": 12.299814224243164
+  },
+  "audio.layers.5.feed_forward1": {
+   "out": 308.6584167480469
+  },
+  "audio.layers.5.norm_pre_attn": {
+   "out": 56.564002990722656,
+   "in": 308.6584167480469
+  },
+  "audio.layers.5.self_attn.q_proj.linear": {
+   "out": 8.742471694946289
+  },
+  "audio.layers.5.self_attn.q_proj": {
+   "out": 8.742471694946289
+  },
+  "audio.layers.5.self_attn.k_proj.linear": {
+   "out": 9.589632987976074
+  },
+  "audio.layers.5.self_attn.k_proj": {
+   "out": 9.589632987976074
+  },
+  "audio.layers.5.self_attn.v_proj.linear": {
+   "out": 11.158462524414062
+  },
+  "audio.layers.5.self_attn.v_proj": {
+   "out": 11.158462524414062
+  },
+  "audio.layers.5.self_attn.relative_k_proj": {
+   "out": 33.01081085205078
+  },
+  "audio.layers.5.self_attn.post.linear": {
+   "out": 43.975318908691406
+  },
+  "audio.layers.5.self_attn.post": {
+   "out": 43.975318908691406
+  },
+  "audio.layers.5.self_attn": {
+   "out": 43.975318908691406
+  },
+  "audio.layers.5.norm_post_attn": {
+   "out": 40.224544525146484,
+   "in": 43.975318908691406
+  },
+  "audio.layers.5.lconv1d.pre_layer_norm": {
+   "out": 31.984397888183594,
+   "in": 310.1951904296875
+  },
+  "audio.layers.5.lconv1d.linear_start.linear": {
+   "out": 20.548011779785156
+  },
+  "audio.layers.5.lconv1d.linear_start": {
+   "out": 20.548011779785156
+  },
+  "audio.layers.5.lconv1d.depthwise_conv1d": {
+   "out": 56.96928787231445
+  },
+  "audio.layers.5.lconv1d.conv_norm": {
+   "out": 106.05704498291016,
+   "in": 56.96928787231445
+  },
+  "audio.layers.5.lconv1d.act_fn": {
+   "out": 32.105247497558594
+  },
+  "audio.layers.5.lconv1d.linear_end.linear": {
+   "out": 19.546653747558594
+  },
+  "audio.layers.5.lconv1d.linear_end": {
+   "out": 8.0
+  },
+  "audio.layers.5.lconv1d": {
+   "out": 316.8614196777344
+  },
+  "audio.layers.5.feed_forward2.pre_layer_norm": {
+   "out": 19.416221618652344,
+   "in": 316.8614196777344
+  },
+  "audio.layers.5.feed_forward2.ffw_layer_1.linear": {
+   "out": 19.72162437438965
+  },
+  "audio.layers.5.feed_forward2.ffw_layer_1": {
+   "out": 19.72162437438965
+  },
+  "audio.layers.5.feed_forward2.act_fn": {
+   "out": 16.905559539794922
+  },
+  "audio.layers.5.feed_forward2.ffw_layer_2.linear": {
+   "out": 6.07294225692749
+  },
+  "audio.layers.5.feed_forward2.ffw_layer_2": {
+   "out": 6.07294225692749
+  },
+  "audio.layers.5.feed_forward2.post_layer_norm": {
+   "out": 122.8766860961914,
+   "in": 6.07294225692749
+  },
+  "audio.layers.5.feed_forward2": {
+   "out": 340.4882507324219
+  },
+  "audio.layers.5.norm_out": {
+   "out": 308.6705322265625,
+   "in": 340.4882507324219
+  },
+  "audio.layers.5": {
+   "out": 308.6705322265625
+  },
+  "audio.layers.6.feed_forward1.pre_layer_norm": {
+   "out": 20.437652587890625,
+   "in": 308.6705322265625
+  },
+  "audio.layers.6.feed_forward1.ffw_layer_1.linear": {
+   "out": 22.90782928466797
+  },
+  "audio.layers.6.feed_forward1.ffw_layer_1": {
+   "out": 22.90782928466797
+  },
+  "audio.layers.6.feed_forward1.act_fn": {
+   "out": 19.04781723022461
+  },
+  "audio.layers.6.feed_forward1.ffw_layer_2.linear": {
+   "out": 17.60479736328125
+  },
+  "audio.layers.6.feed_forward1.ffw_layer_2": {
+   "out": 17.60479736328125
+  },
+  "audio.layers.6.feed_forward1.post_layer_norm": {
+   "out": 62.04408264160156,
+   "in": 17.60479736328125
+  },
+  "audio.layers.6.feed_forward1": {
+   "out": 311.1865539550781
+  },
+  "audio.layers.6.norm_pre_attn": {
+   "out": 187.9246063232422,
+   "in": 311.1865539550781
+  },
+  "audio.layers.6.self_attn.q_proj.linear": {
+   "out": 8.655355453491211
+  },
+  "audio.layers.6.self_attn.q_proj": {
+   "out": 8.655355453491211
+  },
+  "audio.layers.6.self_attn.k_proj.linear": {
+   "out": 16.33292579650879
+  },
+  "audio.layers.6.self_attn.k_proj": {
+   "out": 15.375
+  },
+  "audio.layers.6.self_attn.v_proj.linear": {
+   "out": 19.05459213256836
+  },
+  "audio.layers.6.self_attn.v_proj": {
+   "out": 15.5
+  },
+  "audio.layers.6.self_attn.relative_k_proj": {
+   "out": 47.62188720703125
+  },
+  "audio.layers.6.self_attn.post.linear": {
+   "out": 59.1065559387207
+  },
+  "audio.layers.6.self_attn.post": {
+   "out": 48.5
+  },
+  "audio.layers.6.self_attn": {
+   "out": 48.5
+  },
+  "audio.layers.6.norm_post_attn": {
+   "out": 26.60103988647461,
+   "in": 48.5
+  },
+  "audio.layers.6.lconv1d.pre_layer_norm": {
+   "out": 33.463314056396484,
+   "in": 311.57427978515625
+  },
+  "audio.layers.6.lconv1d.linear_start.linear": {
+   "out": 24.615930557250977
+  },
+  "audio.layers.6.lconv1d.linear_start": {
+   "out": 22.625
+  },
+  "audio.layers.6.lconv1d.depthwise_conv1d": {
+   "out": 62.84701156616211
+  },
+  "audio.layers.6.lconv1d.conv_norm": {
+   "out": 136.04681396484375,
+   "in": 62.84701156616211
+  },
+  "audio.layers.6.lconv1d.act_fn": {
+   "out": 22.74472427368164
+  },
+  "audio.layers.6.lconv1d.linear_end.linear": {
+   "out": 13.502843856811523
+  },
+  "audio.layers.6.lconv1d.linear_end": {
+   "out": 7.875
+  },
+  "audio.layers.6.lconv1d": {
+   "out": 318.1217346191406
+  },
+  "audio.layers.6.feed_forward2.pre_layer_norm": {
+   "out": 35.276695251464844,
+   "in": 318.1217346191406
+  },
+  "audio.layers.6.feed_forward2.ffw_layer_1.linear": {
+   "out": 34.41126251220703
+  },
+  "audio.layers.6.feed_forward2.ffw_layer_1": {
+   "out": 33.25
+  },
+  "audio.layers.6.feed_forward2.act_fn": {
+   "out": 25.12510871887207
+  },
+  "audio.layers.6.feed_forward2.ffw_layer_2.linear": {
+   "out": 11.896248817443848
+  },
+  "audio.layers.6.feed_forward2.ffw_layer_2": {
+   "out": 11.896248817443848
+  },
+  "audio.layers.6.feed_forward2.post_layer_norm": {
+   "out": 135.9692840576172,
+   "in": 11.896248817443848
+  },
+  "audio.layers.6.feed_forward2": {
+   "out": 331.158935546875
+  },
+  "audio.layers.6.norm_out": {
+   "out": 246.38096618652344,
+   "in": 331.158935546875
+  },
+  "audio.layers.6": {
+   "out": 246.38096618652344
+  },
+  "audio.layers.7.feed_forward1.pre_layer_norm": {
+   "out": 16.730968475341797,
+   "in": 246.38096618652344
+  },
+  "audio.layers.7.feed_forward1.ffw_layer_1.linear": {
+   "out": 24.374643325805664
+  },
+  "audio.layers.7.feed_forward1.ffw_layer_1": {
+   "out": 24.374643325805664
+  },
+  "audio.layers.7.feed_forward1.act_fn": {
+   "out": 15.550283432006836
+  },
+  "audio.layers.7.feed_forward1.ffw_layer_2.linear": {
+   "out": 13.370301246643066
+  },
+  "audio.layers.7.feed_forward1.ffw_layer_2": {
+   "out": 13.370301246643066
+  },
+  "audio.layers.7.feed_forward1.post_layer_norm": {
+   "out": 37.792091369628906,
+   "in": 13.370301246643066
+  },
+  "audio.layers.7.feed_forward1": {
+   "out": 245.96690368652344
+  },
+  "audio.layers.7.norm_pre_attn": {
+   "out": 20.952009201049805,
+   "in": 245.96690368652344
+  },
+  "audio.layers.7.self_attn.q_proj.linear": {
+   "out": 9.210456848144531
+  },
+  "audio.layers.7.self_attn.q_proj": {
+   "out": 9.210456848144531
+  },
+  "audio.layers.7.self_attn.k_proj.linear": {
+   "out": 11.57239055633545
+  },
+  "audio.layers.7.self_attn.k_proj": {
+   "out": 11.57239055633545
+  },
+  "audio.layers.7.self_attn.v_proj.linear": {
+   "out": 20.626859664916992
+  },
+  "audio.layers.7.self_attn.v_proj": {
+   "out": 17.5
+  },
+  "audio.layers.7.self_attn.relative_k_proj": {
+   "out": 61.491703033447266
+  },
+  "audio.layers.7.self_attn.post.linear": {
+   "out": 62.44615936279297
+  },
+  "audio.layers.7.self_attn.post": {
+   "out": 56.5
+  },
+  "audio.layers.7.self_attn": {
+   "out": 56.5
+  },
+  "audio.layers.7.norm_post_attn": {
+   "out": 52.432315826416016,
+   "in": 56.5
+  },
+  "audio.layers.7.lconv1d.pre_layer_norm": {
+   "out": 28.696083068847656,
+   "in": 255.50933837890625
+  },
+  "audio.layers.7.lconv1d.linear_start.linear": {
+   "out": 27.3720645904541
+  },
+  "audio.layers.7.lconv1d.linear_start": {
+   "out": 23.25
+  },
+  "audio.layers.7.lconv1d.depthwise_conv1d": {
+   "out": 66.20237731933594
+  },
+  "audio.layers.7.lconv1d.conv_norm": {
+   "out": 365.9641418457031,
+   "in": 66.20237731933594
+  },
+  "audio.layers.7.lconv1d.act_fn": {
+   "out": 365.9641418457031
+  },
+  "audio.layers.7.lconv1d.linear_end.linear": {
+   "out": 9.59936809539795
+  },
+  "audio.layers.7.lconv1d.linear_end": {
+   "out": 7.15625
+  },
+  "audio.layers.7.lconv1d": {
+   "out": 258.82403564453125
+  },
+  "audio.layers.7.feed_forward2.pre_layer_norm": {
+   "out": 18.54086685180664,
+   "in": 258.82403564453125
+  },
+  "audio.layers.7.feed_forward2.ffw_layer_1.linear": {
+   "out": 20.74818229675293
+  },
+  "audio.layers.7.feed_forward2.ffw_layer_1": {
+   "out": 20.74818229675293
+  },
+  "audio.layers.7.feed_forward2.act_fn": {
+   "out": 15.498987197875977
+  },
+  "audio.layers.7.feed_forward2.ffw_layer_2.linear": {
+   "out": 16.668668746948242
+  },
+  "audio.layers.7.feed_forward2.ffw_layer_2": {
+   "out": 16.668668746948242
+  },
+  "audio.layers.7.feed_forward2.post_layer_norm": {
+   "out": 149.35487365722656,
+   "in": 16.668668746948242
+  },
+  "audio.layers.7.feed_forward2": {
+   "out": 260.23992919921875
+  },
+  "audio.layers.7.norm_out": {
+   "out": 245.70535278320312,
+   "in": 260.23992919921875
+  },
+  "audio.layers.7": {
+   "out": 245.70535278320312
+  },
+  "audio.layers.8.feed_forward1.pre_layer_norm": {
+   "out": 17.613967895507812,
+   "in": 245.70535278320312
+  },
+  "audio.layers.8.feed_forward1.ffw_layer_1.linear": {
+   "out": 18.202556610107422
+  },
+  "audio.layers.8.feed_forward1.ffw_layer_1": {
+   "out": 18.202556610107422
+  },
+  "audio.layers.8.feed_forward1.act_fn": {
+   "out": 18.202556610107422
+  },
+  "audio.layers.8.feed_forward1.ffw_layer_2.linear": {
+   "out": 13.111451148986816
+  },
+  "audio.layers.8.feed_forward1.ffw_layer_2": {
+   "out": 13.111451148986816
+  },
+  "audio.layers.8.feed_forward1.post_layer_norm": {
+   "out": 65.31714630126953,
+   "in": 13.111451148986816
+  },
+  "audio.layers.8.feed_forward1": {
+   "out": 236.75201416015625
+  },
+  "audio.layers.8.norm_pre_attn": {
+   "out": 15.53477954864502,
+   "in": 236.75201416015625
+  },
+  "audio.layers.8.self_attn.q_proj.linear": {
+   "out": 10.954731941223145
+  },
+  "audio.layers.8.self_attn.q_proj": {
+   "out": 10.954731941223145
+  },
+  "audio.layers.8.self_attn.k_proj.linear": {
+   "out": 10.912053108215332
+  },
+  "audio.layers.8.self_attn.k_proj": {
+   "out": 10.912053108215332
+  },
+  "audio.layers.8.self_attn.v_proj.linear": {
+   "out": 12.340660095214844
+  },
+  "audio.layers.8.self_attn.v_proj": {
+   "out": 12.340660095214844
+  },
+  "audio.layers.8.self_attn.relative_k_proj": {
+   "out": 46.72235107421875
+  },
+  "audio.layers.8.self_attn.post.linear": {
+   "out": 44.29289627075195
+  },
+  "audio.layers.8.self_attn.post": {
+   "out": 38.5
+  },
+  "audio.layers.8.self_attn": {
+   "out": 38.5
+  },
+  "audio.layers.8.norm_post_attn": {
+   "out": 116.9673080444336,
+   "in": 38.5
+  },
+  "audio.layers.8.lconv1d.pre_layer_norm": {
+   "out": 28.227214813232422,
+   "in": 266.86737060546875
+  },
+  "audio.layers.8.lconv1d.linear_start.linear": {
+   "out": 27.331682205200195
+  },
+  "audio.layers.8.lconv1d.linear_start": {
+   "out": 23.625
+  },
+  "audio.layers.8.lconv1d.depthwise_conv1d": {
+   "out": 154.91673278808594
+  },
+  "audio.layers.8.lconv1d.conv_norm": {
+   "out": 48.04920196533203,
+   "in": 154.91673278808594
+  },
+  "audio.layers.8.lconv1d.act_fn": {
+   "out": 37.27361297607422
+  },
+  "audio.layers.8.lconv1d.linear_end.linear": {
+   "out": 12.978670120239258
+  },
+  "audio.layers.8.lconv1d.linear_end": {
+   "out": 7.0
+  },
+  "audio.layers.8.lconv1d": {
+   "out": 272.2099304199219
+  },
+  "audio.layers.8.feed_forward2.pre_layer_norm": {
+   "out": 19.626066207885742,
+   "in": 272.2099304199219
+  },
+  "audio.layers.8.feed_forward2.ffw_layer_1.linear": {
+   "out": 22.599483489990234
+  },
+  "audio.layers.8.feed_forward2.ffw_layer_1": {
+   "out": 22.599483489990234
+  },
+  "audio.layers.8.feed_forward2.act_fn": {
+   "out": 21.402202606201172
+  },
+  "audio.layers.8.feed_forward2.ffw_layer_2.linear": {
+   "out": 8.589873313903809
+  },
+  "audio.layers.8.feed_forward2.ffw_layer_2": {
+   "out": 8.589873313903809
+  },
+  "audio.layers.8.feed_forward2.post_layer_norm": {
+   "out": 206.2025909423828,
+   "in": 8.589873313903809
+  },
+  "audio.layers.8.feed_forward2": {
+   "out": 276.9667053222656
+  },
+  "audio.layers.8.norm_out": {
+   "out": 189.08245849609375,
+   "in": 276.9667053222656
+  },
+  "audio.layers.8": {
+   "out": 189.08245849609375
+  },
+  "audio.layers.9.feed_forward1.pre_layer_norm": {
+   "out": 79.37127685546875,
+   "in": 189.08245849609375
+  },
+  "audio.layers.9.feed_forward1.ffw_layer_1.linear": {
+   "out": 23.778953552246094
+  },
+  "audio.layers.9.feed_forward1.ffw_layer_1": {
+   "out": 14.25
+  },
+  "audio.layers.9.feed_forward1.act_fn": {
+   "out": 14.12498950958252
+  },
+  "audio.layers.9.feed_forward1.ffw_layer_2.linear": {
+   "out": 36.91440963745117
+  },
+  "audio.layers.9.feed_forward1.ffw_layer_2": {
+   "out": 36.91440963745117
+  },
+  "audio.layers.9.feed_forward1.post_layer_norm": {
+   "out": 68.51969909667969,
+   "in": 36.91440963745117
+  },
+  "audio.layers.9.feed_forward1": {
+   "out": 187.5457763671875
+  },
+  "audio.layers.9.norm_pre_attn": {
+   "out": 21.6054630279541,
+   "in": 187.5457763671875
+  },
+  "audio.layers.9.self_attn.q_proj.linear": {
+   "out": 11.18443775177002
+  },
+  "audio.layers.9.self_attn.q_proj": {
+   "out": 11.18443775177002
+  },
+  "audio.layers.9.self_attn.k_proj.linear": {
+   "out": 18.411300659179688
+  },
+  "audio.layers.9.self_attn.k_proj": {
+   "out": 16.375
+  },
+  "audio.layers.9.self_attn.v_proj.linear": {
+   "out": 13.774962425231934
+  },
+  "audio.layers.9.self_attn.v_proj": {
+   "out": 13.774962425231934
+  },
+  "audio.layers.9.self_attn.relative_k_proj": {
+   "out": 44.282100677490234
+  },
+  "audio.layers.9.self_attn.post.linear": {
+   "out": 71.868408203125
+  },
+  "audio.layers.9.self_attn.post": {
+   "out": 55.0
+  },
+  "audio.layers.9.self_attn": {
+   "out": 55.0
+  },
+  "audio.layers.9.norm_post_attn": {
+   "out": 44.33265686035156,
+   "in": 55.0
+  },
+  "audio.layers.9.lconv1d.pre_layer_norm": {
+   "out": 59.084129333496094,
+   "in": 194.02444458007812
+  },
+  "audio.layers.9.lconv1d.linear_start.linear": {
+   "out": 29.915788650512695
+  },
+  "audio.layers.9.lconv1d.linear_start": {
+   "out": 24.375
+  },
+  "audio.layers.9.lconv1d.depthwise_conv1d": {
+   "out": 110.42432403564453
+  },
+  "audio.layers.9.lconv1d.conv_norm": {
+   "out": 41.25398254394531,
+   "in": 110.42432403564453
+  },
+  "audio.layers.9.lconv1d.act_fn": {
+   "out": 41.25398254394531
+  },
+  "audio.layers.9.lconv1d.linear_end.linear": {
+   "out": 10.803241729736328
+  },
+  "audio.layers.9.lconv1d.linear_end": {
+   "out": 8.0625
+  },
+  "audio.layers.9.lconv1d": {
+   "out": 193.01669311523438
+  },
+  "audio.layers.9.feed_forward2.pre_layer_norm": {
+   "out": 64.78849029541016,
+   "in": 193.01669311523438
+  },
+  "audio.layers.9.feed_forward2.ffw_layer_1.linear": {
+   "out": 49.017669677734375
+  },
+  "audio.layers.9.feed_forward2.ffw_layer_1": {
+   "out": 30.375
+  },
+  "audio.layers.9.feed_forward2.act_fn": {
+   "out": 30.125
+  },
+  "audio.layers.9.feed_forward2.ffw_layer_2.linear": {
+   "out": 20.14874839782715
+  },
+  "audio.layers.9.feed_forward2.ffw_layer_2": {
+   "out": 20.14874839782715
+  },
+  "audio.layers.9.feed_forward2.post_layer_norm": {
+   "out": 176.6168670654297,
+   "in": 20.14874839782715
+  },
+  "audio.layers.9.feed_forward2": {
+   "out": 206.69802856445312
+  },
+  "audio.layers.9.norm_out": {
+   "out": 176.71592712402344,
+   "in": 206.69802856445312
+  },
+  "audio.layers.9": {
+   "out": 176.71592712402344
+  },
+  "audio.layers.10.feed_forward1.pre_layer_norm": {
+   "out": 21.53999137878418,
+   "in": 176.71592712402344
+  },
+  "audio.layers.10.feed_forward1.ffw_layer_1.linear": {
+   "out": 24.94587516784668
+  },
+  "audio.layers.10.feed_forward1.ffw_layer_1": {
+   "out": 13.625
+  },
+  "audio.layers.10.feed_forward1.act_fn": {
+   "out": 13.562481880187988
+  },
+  "audio.layers.10.feed_forward1.ffw_layer_2.linear": {
+   "out": 26.033687591552734
+  },
+  "audio.layers.10.feed_forward1.ffw_layer_2": {
+   "out": 26.033687591552734
+  },
+  "audio.layers.10.feed_forward1.post_layer_norm": {
+   "out": 153.33192443847656,
+   "in": 26.033687591552734
+  },
+  "audio.layers.10.feed_forward1": {
+   "out": 179.13536071777344
+  },
+  "audio.layers.10.norm_pre_attn": {
+   "out": 57.0029296875,
+   "in": 179.13536071777344
+  },
+  "audio.layers.10.self_attn.q_proj.linear": {
+   "out": 15.172468185424805
+  },
+  "audio.layers.10.self_attn.q_proj": {
+   "out": 15.172468185424805
+  },
+  "audio.layers.10.self_attn.k_proj.linear": {
+   "out": 16.846813201904297
+  },
+  "audio.layers.10.self_attn.k_proj": {
+   "out": 16.846813201904297
+  },
+  "audio.layers.10.self_attn.v_proj.linear": {
+   "out": 14.459576606750488
+  },
+  "audio.layers.10.self_attn.v_proj": {
+   "out": 14.459576606750488
+  },
+  "audio.layers.10.self_attn.relative_k_proj": {
+   "out": 50.27861022949219
+  },
+  "audio.layers.10.self_attn.post.linear": {
+   "out": 55.94348907470703
+  },
+  "audio.layers.10.self_attn.post": {
+   "out": 55.94348907470703
+  },
+  "audio.layers.10.self_attn": {
+   "out": 55.94348907470703
+  },
+  "audio.layers.10.norm_post_attn": {
+   "out": 72.85002136230469,
+   "in": 55.94348907470703
+  },
+  "audio.layers.10.lconv1d.pre_layer_norm": {
+   "out": 96.57823181152344,
+   "in": 184.0260009765625
+  },
+  "audio.layers.10.lconv1d.linear_start.linear": {
+   "out": 26.722084045410156
+  },
+  "audio.layers.10.lconv1d.linear_start": {
+   "out": 26.722084045410156
+  },
+  "audio.layers.10.lconv1d.depthwise_conv1d": {
+   "out": 115.92303466796875
+  },
+  "audio.layers.10.lconv1d.conv_norm": {
+   "out": 90.21292877197266,
+   "in": 115.92303466796875
+  },
+  "audio.layers.10.lconv1d.act_fn": {
+   "out": 66.6806869506836
+  },
+  "audio.layers.10.lconv1d.linear_end.linear": {
+   "out": 23.29559898376465
+  },
+  "audio.layers.10.lconv1d.linear_end": {
+   "out": 11.0
+  },
+  "audio.layers.10.lconv1d": {
+   "out": 186.86782836914062
+  },
+  "audio.layers.10.feed_forward2.pre_layer_norm": {
+   "out": 87.9221420288086,
+   "in": 186.86782836914062
+  },
+  "audio.layers.10.feed_forward2.ffw_layer_1.linear": {
+   "out": 91.5782699584961
+  },
+  "audio.layers.10.feed_forward2.ffw_layer_1": {
+   "out": 68.5
+  },
+  "audio.layers.10.feed_forward2.act_fn": {
+   "out": 68.0
+  },
+  "audio.layers.10.feed_forward2.ffw_layer_2.linear": {
+   "out": 50.76002883911133
+  },
+  "audio.layers.10.feed_forward2.ffw_layer_2": {
+   "out": 50.76002883911133
+  },
+  "audio.layers.10.feed_forward2.post_layer_norm": {
+   "out": 562.2796630859375,
+   "in": 50.76002883911133
+  },
+  "audio.layers.10.feed_forward2": {
+   "out": 358.38690185546875
+  },
+  "audio.layers.10.norm_out": {
+   "out": 274.59478759765625,
+   "in": 358.38690185546875
+  },
+  "audio.layers.10": {
+   "out": 274.59478759765625
+  },
+  "audio.layers.11.feed_forward1.pre_layer_norm": {
+   "out": 16.067302703857422,
+   "in": 274.59478759765625
+  },
+  "audio.layers.11.feed_forward1.ffw_layer_1.linear": {
+   "out": 25.32093048095703
+  },
+  "audio.layers.11.feed_forward1.ffw_layer_1": {
+   "out": 21.875
+  },
+  "audio.layers.11.feed_forward1.act_fn": {
+   "out": 21.625
+  },
+  "audio.layers.11.feed_forward1.ffw_layer_2.linear": {
+   "out": 9.839768409729004
+  },
+  "audio.layers.11.feed_forward1.ffw_layer_2": {
+   "out": 9.839768409729004
+  },
+  "audio.layers.11.feed_forward1.post_layer_norm": {
+   "out": 307.8577575683594,
+   "in": 9.839768409729004
+  },
+  "audio.layers.11.feed_forward1": {
+   "out": 290.4443359375
+  },
+  "audio.layers.11.norm_pre_attn": {
+   "out": 78.71741485595703,
+   "in": 290.4443359375
+  },
+  "audio.layers.11.self_attn.q_proj.linear": {
+   "out": 17.931812286376953
+  },
+  "audio.layers.11.self_attn.q_proj": {
+   "out": 17.0
+  },
+  "audio.layers.11.self_attn.k_proj.linear": {
+   "out": 13.81983470916748
+  },
+  "audio.layers.11.self_attn.k_proj": {
+   "out": 13.81983470916748
+  },
+  "audio.layers.11.self_attn.v_proj.linear": {
+   "out": 15.541643142700195
+  },
+  "audio.layers.11.self_attn.v_proj": {
+   "out": 15.541643142700195
+  },
+  "audio.layers.11.self_attn.relative_k_proj": {
+   "out": 41.545166015625
+  },
+  "audio.layers.11.self_attn.post.linear": {
+   "out": 51.251319885253906
+  },
+  "audio.layers.11.self_attn.post": {
+   "out": 51.251319885253906
+  },
+  "audio.layers.11.self_attn": {
+   "out": 51.251319885253906
+  },
+  "audio.layers.11.norm_post_attn": {
+   "out": 82.24227142333984,
+   "in": 51.251319885253906
+  },
+  "audio.layers.11.lconv1d.pre_layer_norm": {
+   "out": 414.87774658203125,
+   "in": 304.07757568359375
+  },
+  "audio.layers.11.lconv1d.linear_start.linear": {
+   "out": 30.34394073486328
+  },
+  "audio.layers.11.lconv1d.linear_start": {
+   "out": 27.125
+  },
+  "audio.layers.11.lconv1d.depthwise_conv1d": {
+   "out": 88.18900299072266
+  },
+  "audio.layers.11.lconv1d.conv_norm": {
+   "out": 166.6110076904297,
+   "in": 88.18900299072266
+  },
+  "audio.layers.11.lconv1d.act_fn": {
+   "out": 163.3194580078125
+  },
+  "audio.layers.11.lconv1d.linear_end.linear": {
+   "out": 54.74494934082031
+  },
+  "audio.layers.11.lconv1d.linear_end": {
+   "out": 16.375
+  },
+  "audio.layers.11.lconv1d": {
+   "out": 314.90740966796875
+  },
+  "audio.layers.11.feed_forward2.pre_layer_norm": {
+   "out": 25.153432846069336,
+   "in": 314.90740966796875
+  },
+  "audio.layers.11.feed_forward2.ffw_layer_1.linear": {
+   "out": 32.3669548034668
+  },
+  "audio.layers.11.feed_forward2.ffw_layer_1": {
+   "out": 32.3669548034668
+  },
+  "audio.layers.11.feed_forward2.act_fn": {
+   "out": 29.47344207763672
+  },
+  "audio.layers.11.feed_forward2.ffw_layer_2.linear": {
+   "out": 7.766573429107666
+  },
+  "audio.layers.11.feed_forward2.ffw_layer_2": {
+   "out": 7.766573429107666
+  },
+  "audio.layers.11.feed_forward2.post_layer_norm": {
+   "out": 291.129150390625,
+   "in": 7.766573429107666
+  },
+  "audio.layers.11.feed_forward2": {
+   "out": 315.2398681640625
+  },
+  "audio.layers.11.norm_out": {
+   "out": 121.953369140625,
+   "in": 315.2398681640625
+  },
+  "audio.layers.11": {
+   "out": 121.953369140625
+  },
+  "audio.output_proj": {
+   "out": 53.225372314453125
+  },
+  "audio.": {
+   "out": 53.225372314453125
+  },
+  "embed_audio.embedding_pre_projection_norm": {
+   "out": 8.00234317779541,
+   "in": 53.225372314453125
+  },
+  "embed_audio.embedding_projection": {
+   "out": 7.122588634490967
+  },
+  "embed_audio.": {
+   "out": 7.122588634490967
+  },
+  "text.ple.per_layer_model_projection": {
+   "out": 14.115743637084961
+  },
+  "text.ple.per_layer_projection_norm": {
+   "out": 287.0089111328125,
+   "in": 0.6238335967063904
+  },
+  "text.ple": {
+   "out": 287.0089111328125
+  },
+  "text.rotary_emb": {
+   "out": 1.0
+  },
+  "text.layers.0.input_layernorm": {
+   "out": 110.86609649658203,
+   "in": 8.883028984069824
+  },
+  "text.layers.0.self_attn.q_proj": {
+   "out": 145.94908142089844
+  },
+  "text.layers.0.self_attn.k_proj": {
+   "out": 126.57929992675781
+  },
+  "text.layers.0.self_attn.v_proj": {
+   "out": 381.6448669433594
+  },
+  "text.layers.0.self_attn.q_norm": {
+   "out": 9.926271438598633,
+   "in": 145.94908142089844
+  },
+  "text.layers.0.self_attn.k_norm": {
+   "out": 1.5349900722503662,
+   "in": 126.57929992675781
+  },
+  "text.layers.0.self_attn.v_norm": {
+   "out": 15.85742473602295,
+   "in": 381.6448669433594
+  },
+  "text.layers.0.self_attn.o_proj": {
+   "out": 16.628679275512695
+  },
+  "text.layers.0.self_attn": {
+   "out": 16.628679275512695
+  },
+  "text.layers.0.post_attention_layernorm": {
+   "out": 19.868379592895508,
+   "in": 16.628679275512695
+  },
+  "text.layers.0.pre_feedforward_layernorm": {
+   "out": 9.917889595031738,
+   "in": 21.379920959472656
+  },
+  "text.layers.0.mlp.gate_proj": {
+   "out": 6.549493789672852
+  },
+  "text.layers.0.mlp.act_fn": {
+   "out": 5.818722724914551
+  },
+  "text.layers.0.mlp.up_proj": {
+   "out": 6.840442657470703
+  },
+  "text.layers.0.mlp.down_proj": {
+   "out": 18.277894973754883
+  },
+  "text.layers.0.mlp": {
+   "out": 18.277894973754883
+  },
+  "text.layers.0.post_feedforward_layernorm": {
+   "out": 11.087462425231934,
+   "in": 18.277894973754883
+  },
+  "text.layers.0.ple_block.per_layer_input_gate": {
+   "out": 10.274852752685547
+  },
+  "text.layers.0.ple_block.act_fn": {
+   "out": 8.401880264282227
+  },
+  "text.layers.0.ple_block.per_layer_projection": {
+   "out": 251.8369903564453
+  },
+  "text.layers.0.ple_block.post_per_layer_input_norm": {
+   "out": 9.928571701049805,
+   "in": 251.8369903564453
+  },
+  "text.layers.0.ple_block": {
+   "out": 25.992223739624023
+  },
+  "text.layers.0": {
+   "out": 10.153212547302246
+  },
+  "text.layers.1.input_layernorm": {
+   "out": 86.03868865966797,
+   "in": 10.153212547302246
+  },
+  "text.layers.1.self_attn.q_proj": {
+   "out": 133.26260375976562
+  },
+  "text.layers.1.self_attn.k_proj": {
+   "out": 75.72232055664062
+  },
+  "text.layers.1.self_attn.v_proj": {
+   "out": 346.60693359375
+  },
+  "text.layers.1.self_attn.q_norm": {
+   "out": 14.388381958007812,
+   "in": 133.26260375976562
+  },
+  "text.layers.1.self_attn.k_norm": {
+   "out": 0.85765141248703,
+   "in": 75.72232055664062
+  },
+  "text.layers.1.self_attn.v_norm": {
+   "out": 15.988377571105957,
+   "in": 346.60693359375
+  },
+  "text.layers.1.self_attn.o_proj": {
+   "out": 11.447835922241211
+  },
+  "text.layers.1.self_attn": {
+   "out": 11.447835922241211
+  },
+  "text.layers.1.post_attention_layernorm": {
+   "out": 46.576377868652344,
+   "in": 11.447835922241211
+  },
+  "text.layers.1.pre_feedforward_layernorm": {
+   "out": 6.566895484924316,
+   "in": 48.98317337036133
+  },
+  "text.layers.1.mlp.gate_proj": {
+   "out": 7.9070210456848145
+  },
+  "text.layers.1.mlp.act_fn": {
+   "out": 7.9070210456848145
+  },
+  "text.layers.1.mlp.up_proj": {
+   "out": 5.9632463455200195
+  },
+  "text.layers.1.mlp.down_proj": {
+   "out": 13.455702781677246
+  },
+  "text.layers.1.mlp": {
+   "out": 13.455702781677246
+  },
+  "text.layers.1.post_feedforward_layernorm": {
+   "out": 14.683158874511719,
+   "in": 13.455702781677246
+  },
+  "text.layers.1.ple_block.per_layer_input_gate": {
+   "out": 3.404221296310425
+  },
+  "text.layers.1.ple_block.act_fn": {
+   "out": 3.403329610824585
+  },
+  "text.layers.1.ple_block.per_layer_projection": {
+   "out": 107.50911712646484
+  },
+  "text.layers.1.ple_block.post_per_layer_input_norm": {
+   "out": 6.415749549865723,
+   "in": 107.50911712646484
+  },
+  "text.layers.1.ple_block": {
+   "out": 49.19610595703125
+  },
+  "text.layers.1": {
+   "out": 8.31145191192627
+  },
+  "text.layers.2.input_layernorm": {
+   "out": 86.73033905029297,
+   "in": 8.31145191192627
+  },
+  "text.layers.2.self_attn.q_proj": {
+   "out": 132.178955078125
+  },
+  "text.layers.2.self_attn.k_proj": {
+   "out": 95.75629425048828
+  },
+  "text.layers.2.self_attn.v_proj": {
+   "out": 522.9151611328125
+  },
+  "text.layers.2.self_attn.q_norm": {
+   "out": 12.246355056762695,
+   "in": 132.178955078125
+  },
+  "text.layers.2.self_attn.k_norm": {
+   "out": 0.9487249255180359,
+   "in": 95.75629425048828
+  },
+  "text.layers.2.self_attn.v_norm": {
+   "out": 15.9664945602417,
+   "in": 522.9151611328125
+  },
+  "text.layers.2.self_attn.o_proj": {
+   "out": 26.7109432220459
+  },
+  "text.layers.2.self_attn": {
+   "out": 26.7109432220459
+  },
+  "text.layers.2.post_attention_layernorm": {
+   "out": 2.1268813610076904,
+   "in": 26.7109432220459
+  },
+  "text.layers.2.pre_feedforward_layernorm": {
+   "out": 6.568887233734131,
+   "in": 7.404460906982422
+  },
+  "text.layers.2.mlp.gate_proj": {
+   "out": 4.346988201141357
+  },
+  "text.layers.2.mlp.act_fn": {
+   "out": 4.346976280212402
+  },
+  "text.layers.2.mlp.up_proj": {
+   "out": 4.606229305267334
+  },
+  "text.layers.2.mlp.down_proj": {
+   "out": 7.838973045349121
+  },
+  "text.layers.2.mlp": {
+   "out": 7.838973045349121
+  },
+  "text.layers.2.post_feedforward_layernorm": {
+   "out": 3.6493210792541504,
+   "in": 7.838973045349121
+  },
+  "text.layers.2.ple_block.per_layer_input_gate": {
+   "out": 4.7850661277771
+  },
+  "text.layers.2.ple_block.act_fn": {
+   "out": 4.785065174102783
+  },
+  "text.layers.2.ple_block.per_layer_projection": {
+   "out": 175.31167602539062
+  },
+  "text.layers.2.ple_block.post_per_layer_input_norm": {
+   "out": 1.5848689079284668,
+   "in": 175.31167602539062
+  },
+  "text.layers.2.ple_block": {
+   "out": 8.249942779541016
+  },
+  "text.layers.2": {
+   "out": 7.734321594238281
+  },
+  "text.layers.3.input_layernorm": {
+   "out": 126.31729125976562,
+   "in": 7.734321594238281
+  },
+  "text.layers.3.self_attn.q_proj": {
+   "out": 158.0952911376953
+  },
+  "text.layers.3.self_attn.k_proj": {
+   "out": 128.76011657714844
+  },
+  "text.layers.3.self_attn.v_proj": {
+   "out": 346.8685607910156
+  },
+  "text.layers.3.self_attn.q_norm": {
+   "out": 13.73508071899414,
+   "in": 158.0952911376953
+  },
+  "text.layers.3.self_attn.k_norm": {
+   "out": 0.7882099151611328,
+   "in": 128.76011657714844
+  },
+  "text.layers.3.self_attn.v_norm": {
+   "out": 15.781407356262207,
+   "in": 346.8685607910156
+  },
+  "text.layers.3.self_attn.o_proj": {
+   "out": 30.477249145507812
+  },
+  "text.layers.3.self_attn": {
+   "out": 30.477249145507812
+  },
+  "text.layers.3.post_attention_layernorm": {
+   "out": 3.6103265285491943,
+   "in": 30.477249145507812
+  },
+  "text.layers.3.pre_feedforward_layernorm": {
+   "out": 7.984128952026367,
+   "in": 7.236274719238281
+  },
+  "text.layers.3.mlp.gate_proj": {
+   "out": 5.820097923278809
+  },
+  "text.layers.3.mlp.act_fn": {
+   "out": 5.519078731536865
+  },
+  "text.layers.3.mlp.up_proj": {
+   "out": 7.061041831970215
+  },
+  "text.layers.3.mlp.down_proj": {
+   "out": 6.42238712310791
+  },
+  "text.layers.3.mlp": {
+   "out": 6.42238712310791
+  },
+  "text.layers.3.post_feedforward_layernorm": {
+   "out": 6.034243583679199,
+   "in": 6.42238712310791
+  },
+  "text.layers.3.ple_block.per_layer_input_gate": {
+   "out": 8.05990219116211
+  },
+  "text.layers.3.ple_block.act_fn": {
+   "out": 8.05990219116211
+  },
+  "text.layers.3.ple_block.per_layer_projection": {
+   "out": 263.9864196777344
+  },
+  "text.layers.3.ple_block.post_per_layer_input_norm": {
+   "out": 3.4470632076263428,
+   "in": 263.9864196777344
+  },
+  "text.layers.3.ple_block": {
+   "out": 12.47390365600586
+  },
+  "text.layers.3": {
+   "out": 10.865939140319824
+  },
+  "text.layers.4.input_layernorm": {
+   "out": 97.09846496582031,
+   "in": 10.865939140319824
+  },
+  "text.layers.4.self_attn.q_proj": {
+   "out": 93.57453155517578
+  },
+  "text.layers.4.self_attn.k_proj": {
+   "out": 98.06539154052734
+  },
+  "text.layers.4.self_attn.v_proj": {
+   "out": 350.52838134765625
+  },
+  "text.layers.4.self_attn.q_norm": {
+   "out": 10.499256134033203,
+   "in": 93.57453155517578
+  },
+  "text.layers.4.self_attn.k_norm": {
+   "out": 0.9990336298942566,
+   "in": 98.06539154052734
+  },
+  "text.layers.4.self_attn.v_norm": {
+   "out": 15.893372535705566,
+   "in": 350.52838134765625
+  },
+  "text.layers.4.self_attn.o_proj": {
+   "out": 13.780143737792969
+  },
+  "text.layers.4.self_attn": {
+   "out": 13.780143737792969
+  },
+  "text.layers.4.post_attention_layernorm": {
+   "out": 3.741955518722534,
+   "in": 13.780143737792969
+  },
+  "text.layers.4.pre_feedforward_layernorm": {
+   "out": 15.647462844848633,
+   "in": 12.186464309692383
+  },
+  "text.layers.4.mlp.gate_proj": {
+   "out": 7.26481294631958
+  },
+  "text.layers.4.mlp.act_fn": {
+   "out": 7.26481294631958
+  },
+  "text.layers.4.mlp.up_proj": {
+   "out": 7.447864532470703
+  },
+  "text.layers.4.mlp.down_proj": {
+   "out": 6.394880294799805
+  },
+  "text.layers.4.mlp": {
+   "out": 6.394880294799805
+  },
+  "text.layers.4.post_feedforward_layernorm": {
+   "out": 17.90716552734375,
+   "in": 6.394880294799805
+  },
+  "text.layers.4.ple_block.per_layer_input_gate": {
+   "out": 17.008100509643555
+  },
+  "text.layers.4.ple_block.act_fn": {
+   "out": 17.008100509643555
+  },
+  "text.layers.4.ple_block.per_layer_projection": {
+   "out": 302.3888854980469
+  },
+  "text.layers.4.ple_block.post_per_layer_input_norm": {
+   "out": 5.953371524810791,
+   "in": 302.3888854980469
+  },
+  "text.layers.4.ple_block": {
+   "out": 32.52489471435547
+  },
+  "text.layers.4": {
+   "out": 22.4879150390625
+  },
+  "text.layers.5.input_layernorm": {
+   "out": 62.72695541381836,
+   "in": 22.4879150390625
+  },
+  "text.layers.5.self_attn.q_proj": {
+   "out": 115.42253112792969
+  },
+  "text.layers.5.self_attn.k_proj": {
+   "out": 69.249267578125
+  },
+  "text.layers.5.self_attn.v_proj": {
+   "out": 291.6903381347656
+  },
+  "text.layers.5.self_attn.q_norm": {
+   "out": 14.606417655944824,
+   "in": 115.42253112792969
+  },
+  "text.layers.5.self_attn.k_norm": {
+   "out": 0.5319581031799316,
+   "in": 69.249267578125
+  },
+  "text.layers.5.self_attn.v_norm": {
+   "out": 21.80729103088379,
+   "in": 291.6903381347656
+  },
+  "text.layers.5.self_attn.o_proj": {
+   "out": 12.605008125305176
+  },
+  "text.layers.5.self_attn": {
+   "out": 12.605008125305176
+  },
+  "text.layers.5.post_attention_layernorm": {
+   "out": 10.491460800170898,
+   "in": 12.605008125305176
+  },
+  "text.layers.5.pre_feedforward_layernorm": {
+   "out": 9.591257095336914,
+   "in": 23.38532066345215
+  },
+  "text.layers.5.mlp.gate_proj": {
+   "out": 6.306942939758301
+  },
+  "text.layers.5.mlp.act_fn": {
+   "out": 6.010047435760498
+  },
+  "text.layers.5.mlp.up_proj": {
+   "out": 8.678059577941895
+  },
+  "text.layers.5.mlp.down_proj": {
+   "out": 8.576204299926758
+  },
+  "text.layers.5.mlp": {
+   "out": 8.576204299926758
+  },
+  "text.layers.5.post_feedforward_layernorm": {
+   "out": 25.14653205871582,
+   "in": 8.576204299926758
+  },
+  "text.layers.5.ple_block.per_layer_input_gate": {
+   "out": 9.664013862609863
+  },
+  "text.layers.5.ple_block.act_fn": {
+   "out": 9.664013862609863
+  },
+  "text.layers.5.ple_block.per_layer_projection": {
+   "out": 737.5420532226562
+  },
+  "text.layers.5.ple_block.post_per_layer_input_norm": {
+   "out": 12.973128318786621,
+   "in": 737.5420532226562
+  },
+  "text.layers.5.ple_block": {
+   "out": 49.286624908447266
+  },
+  "text.layers.5": {
+   "out": 22.525527954101562
+  },
+  "text.layers.6.input_layernorm": {
+   "out": 95.75560760498047,
+   "in": 22.525527954101562
+  },
+  "text.layers.6.self_attn.q_proj": {
+   "out": 76.37621307373047
+  },
+  "text.layers.6.self_attn.k_proj": {
+   "out": 95.05326843261719
+  },
+  "text.layers.6.self_attn.v_proj": {
+   "out": 155.30563354492188
+  },
+  "text.layers.6.self_attn.q_norm": {
+   "out": 9.919803619384766,
+   "in": 76.37621307373047
+  },
+  "text.layers.6.self_attn.k_norm": {
+   "out": 0.9167384505271912,
+   "in": 95.05326843261719
+  },
+  "text.layers.6.self_attn.v_norm": {
+   "out": 15.060556411743164,
+   "in": 155.30563354492188
+  },
+  "text.layers.6.self_attn.o_proj": {
+   "out": 39.352439880371094
+  },
+  "text.layers.6.self_attn": {
+   "out": 39.352439880371094
+  },
+  "text.layers.6.post_attention_layernorm": {
+   "out": 162.69293212890625,
+   "in": 39.352439880371094
+  },
+  "text.layers.6.pre_feedforward_layernorm": {
+   "out": 4.046945571899414,
+   "in": 178.6435089111328
+  },
+  "text.layers.6.mlp.gate_proj": {
+   "out": 4.289368629455566
+  },
+  "text.layers.6.mlp.act_fn": {
+   "out": 4.2893524169921875
+  },
+  "text.layers.6.mlp.up_proj": {
+   "out": 5.827401161193848
+  },
+  "text.layers.6.mlp.down_proj": {
+   "out": 4.395543575286865
+  },
+  "text.layers.6.mlp": {
+   "out": 4.395543575286865
+  },
+  "text.layers.6.post_feedforward_layernorm": {
+   "out": 25.25762176513672,
+   "in": 4.395543575286865
+  },
+  "text.layers.6.ple_block.per_layer_input_gate": {
+   "out": 5.525454521179199
+  },
+  "text.layers.6.ple_block.act_fn": {
+   "out": 5.525454521179199
+  },
+  "text.layers.6.ple_block.per_layer_projection": {
+   "out": 169.83010864257812
+  },
+  "text.layers.6.ple_block.post_per_layer_input_norm": {
+   "out": 8.060365676879883,
+   "in": 169.83010864257812
+  },
+  "text.layers.6.ple_block": {
+   "out": 198.40933227539062
+  },
+  "text.layers.6": {
+   "out": 44.75835418701172
+  },
+  "text.layers.7.input_layernorm": {
+   "out": 24.530847549438477,
+   "in": 44.75835418701172
+  },
+  "text.layers.7.self_attn.q_proj": {
+   "out": 39.43914031982422
+  },
+  "text.layers.7.self_attn.k_proj": {
+   "out": 53.84679412841797
+  },
+  "text.layers.7.self_attn.v_proj": {
+   "out": 198.62060546875
+  },
+  "text.layers.7.self_attn.q_norm": {
+   "out": 11.666991233825684,
+   "in": 39.43914031982422
+  },
+  "text.layers.7.self_attn.k_norm": {
+   "out": 1.042833685874939,
+   "in": 53.84679412841797
+  },
+  "text.layers.7.self_attn.v_norm": {
+   "out": 15.769667625427246,
+   "in": 198.62060546875
+  },
+  "text.layers.7.self_attn.o_proj": {
+   "out": 15.860621452331543
+  },
+  "text.layers.7.self_attn": {
+   "out": 15.860621452331543
+  },
+  "text.layers.7.post_attention_layernorm": {
+   "out": 3.4036314487457275,
+   "in": 15.860621452331543
+  },
+  "text.layers.7.pre_feedforward_layernorm": {
+   "out": 4.678593635559082,
+   "in": 47.64606857299805
+  },
+  "text.layers.7.mlp.gate_proj": {
+   "out": 5.205270767211914
+  },
+  "text.layers.7.mlp.act_fn": {
+   "out": 5.205270767211914
+  },
+  "text.layers.7.mlp.up_proj": {
+   "out": 6.221861362457275
+  },
+  "text.layers.7.mlp.down_proj": {
+   "out": 4.036862850189209
+  },
+  "text.layers.7.mlp": {
+   "out": 4.036862850189209
+  },
+  "text.layers.7.post_feedforward_layernorm": {
+   "out": 6.80184268951416,
+   "in": 4.036862850189209
+  },
+  "text.layers.7.ple_block.per_layer_input_gate": {
+   "out": 9.277666091918945
+  },
+  "text.layers.7.ple_block.act_fn": {
+   "out": 9.277666091918945
+  },
+  "text.layers.7.ple_block.per_layer_projection": {
+   "out": 259.36456298828125
+  },
+  "text.layers.7.ple_block.post_per_layer_input_norm": {
+   "out": 2.077096700668335,
+   "in": 259.36456298828125
+  },
+  "text.layers.7.ple_block": {
+   "out": 54.30787658691406
+  },
+  "text.layers.7": {
+   "out": 49.64079284667969
+  },
+  "text.layers.8.input_layernorm": {
+   "out": 31.272823333740234,
+   "in": 49.64079284667969
+  },
+  "text.layers.8.self_attn.q_proj": {
+   "out": 40.97926712036133
+  },
+  "text.layers.8.self_attn.k_proj": {
+   "out": 55.1741943359375
+  },
+  "text.layers.8.self_attn.v_proj": {
+   "out": 225.2150115966797
+  },
+  "text.layers.8.self_attn.q_norm": {
+   "out": 10.514607429504395,
+   "in": 40.97926712036133
+  },
+  "text.layers.8.self_attn.k_norm": {
+   "out": 0.9318240284919739,
+   "in": 55.1741943359375
+  },
+  "text.layers.8.self_attn.v_norm": {
+   "out": 15.783907890319824,
+   "in": 225.2150115966797
+  },
+  "text.layers.8.self_attn.o_proj": {
+   "out": 17.17829132080078
+  },
+  "text.layers.8.self_attn": {
+   "out": 17.17829132080078
+  },
+  "text.layers.8.post_attention_layernorm": {
+   "out": 4.62586784362793,
+   "in": 17.17829132080078
+  },
+  "text.layers.8.pre_feedforward_layernorm": {
+   "out": 5.960550308227539,
+   "in": 53.280757904052734
+  },
+  "text.layers.8.mlp.gate_proj": {
+   "out": 6.257031440734863
+  },
+  "text.layers.8.mlp.act_fn": {
+   "out": 6.257031440734863
+  },
+  "text.layers.8.mlp.up_proj": {
+   "out": 7.624346733093262
+  },
+  "text.layers.8.mlp.down_proj": {
+   "out": 5.270610332489014
+  },
+  "text.layers.8.mlp": {
+   "out": 5.270610332489014
+  },
+  "text.layers.8.post_feedforward_layernorm": {
+   "out": 6.437812328338623,
+   "in": 5.270610332489014
+  },
+  "text.layers.8.ple_block.per_layer_input_gate": {
+   "out": 12.954310417175293
+  },
+  "text.layers.8.ple_block.act_fn": {
+   "out": 12.954310417175293
+  },
+  "text.layers.8.ple_block.per_layer_projection": {
+   "out": 242.07101440429688
+  },
+  "text.layers.8.ple_block.post_per_layer_input_norm": {
+   "out": 2.518996477127075,
+   "in": 242.07101440429688
+  },
+  "text.layers.8.ple_block": {
+   "out": 58.68646240234375
+  },
+  "text.layers.8": {
+   "out": 50.89216613769531
+  },
+  "text.layers.9.input_layernorm": {
+   "out": 81.75499725341797,
+   "in": 50.89216613769531
+  },
+  "text.layers.9.self_attn.q_proj": {
+   "out": 96.5187759399414
+  },
+  "text.layers.9.self_attn.k_proj": {
+   "out": 89.82844543457031
+  },
+  "text.layers.9.self_attn.v_proj": {
+   "out": 208.10398864746094
+  },
+  "text.layers.9.self_attn.q_norm": {
+   "out": 13.155967712402344,
+   "in": 96.5187759399414
+  },
+  "text.layers.9.self_attn.k_norm": {
+   "out": 1.0102814435958862,
+   "in": 89.82844543457031
+  },
+  "text.layers.9.self_attn.v_norm": {
+   "out": 15.693045616149902,
+   "in": 208.10398864746094
+  },
+  "text.layers.9.self_attn.o_proj": {
+   "out": 13.562305450439453
+  },
+  "text.layers.9.self_attn": {
+   "out": 13.562305450439453
+  },
+  "text.layers.9.post_attention_layernorm": {
+   "out": 3.5196621417999268,
+   "in": 13.562305450439453
+  },
+  "text.layers.9.pre_feedforward_layernorm": {
+   "out": 4.55948543548584,
+   "in": 53.18782424926758
+  },
+  "text.layers.9.mlp.gate_proj": {
+   "out": 5.5362653732299805
+  },
+  "text.layers.9.mlp.act_fn": {
+   "out": 5.5362653732299805
+  },
+  "text.layers.9.mlp.up_proj": {
+   "out": 3.4745945930480957
+  },
+  "text.layers.9.mlp.down_proj": {
+   "out": 5.608020305633545
+  },
+  "text.layers.9.mlp": {
+   "out": 5.608020305633545
+  },
+  "text.layers.9.post_feedforward_layernorm": {
+   "out": 7.264012813568115,
+   "in": 5.608020305633545
+  },
+  "text.layers.9.ple_block.per_layer_input_gate": {
+   "out": 12.395543098449707
+  },
+  "text.layers.9.ple_block.act_fn": {
+   "out": 11.429217338562012
+  },
+  "text.layers.9.ple_block.per_layer_projection": {
+   "out": 415.00360107421875
+  },
+  "text.layers.9.ple_block.post_per_layer_input_norm": {
+   "out": 9.227073669433594,
+   "in": 415.00360107421875
+  },
+  "text.layers.9.ple_block": {
+   "out": 56.791847229003906
+  },
+  "text.layers.9": {
+   "out": 45.921531677246094
+  },
+  "text.layers.10.input_layernorm": {
+   "out": 75.92823791503906,
+   "in": 45.921531677246094
+  },
+  "text.layers.10.self_attn.q_proj": {
+   "out": 77.84230041503906
+  },
+  "text.layers.10.self_attn.k_proj": {
+   "out": 49.570560455322266
+  },
+  "text.layers.10.self_attn.v_proj": {
+   "out": 276.58599853515625
+  },
+  "text.layers.10.self_attn.q_norm": {
+   "out": 11.009474754333496,
+   "in": 77.84230041503906
+  },
+  "text.layers.10.self_attn.k_norm": {
+   "out": 0.9734175205230713,
+   "in": 49.570560455322266
+  },
+  "text.layers.10.self_attn.v_norm": {
+   "out": 15.641626358032227,
+   "in": 276.58599853515625
+  },
+  "text.layers.10.self_attn.o_proj": {
+   "out": 22.829914093017578
+  },
+  "text.layers.10.self_attn": {
+   "out": 22.829914093017578
+  },
+  "text.layers.10.post_attention_layernorm": {
+   "out": 8.466049194335938,
+   "in": 22.829914093017578
+  },
+  "text.layers.10.pre_feedforward_layernorm": {
+   "out": 5.329057216644287,
+   "in": 49.03562927246094
+  },
+  "text.layers.10.mlp.gate_proj": {
+   "out": 4.172601222991943
+  },
+  "text.layers.10.mlp.act_fn": {
+   "out": 3.7654080390930176
+  },
+  "text.layers.10.mlp.up_proj": {
+   "out": 3.6468467712402344
+  },
+  "text.layers.10.mlp.down_proj": {
+   "out": 2.3020873069763184
+  },
+  "text.layers.10.mlp": {
+   "out": 2.3020873069763184
+  },
+  "text.layers.10.post_feedforward_layernorm": {
+   "out": 8.362165451049805,
+   "in": 2.3020873069763184
+  },
+  "text.layers.10.ple_block.per_layer_input_gate": {
+   "out": 11.545687675476074
+  },
+  "text.layers.10.ple_block.act_fn": {
+   "out": 11.545687675476074
+  },
+  "text.layers.10.ple_block.per_layer_projection": {
+   "out": 527.044921875
+  },
+  "text.layers.10.ple_block.post_per_layer_input_norm": {
+   "out": 9.771424293518066,
+   "in": 527.044921875
+  },
+  "text.layers.10.ple_block": {
+   "out": 54.34953308105469
+  },
+  "text.layers.10": {
+   "out": 30.14700698852539
+  },
+  "text.layers.11.input_layernorm": {
+   "out": 49.51622772216797,
+   "in": 30.14700698852539
+  },
+  "text.layers.11.self_attn.q_proj": {
+   "out": 53.334659576416016
+  },
+  "text.layers.11.self_attn.k_proj": {
+   "out": 19.7449893951416
+  },
+  "text.layers.11.self_attn.v_proj": {
+   "out": 174.70545959472656
+  },
+  "text.layers.11.self_attn.q_norm": {
+   "out": 13.925952911376953,
+   "in": 53.334659576416016
+  },
+  "text.layers.11.self_attn.k_norm": {
+   "out": 0.3472796380519867,
+   "in": 19.7449893951416
+  },
+  "text.layers.11.self_attn.v_norm": {
+   "out": 20.460514068603516,
+   "in": 174.70545959472656
+  },
+  "text.layers.11.self_attn.o_proj": {
+   "out": 59.04020309448242
+  },
+  "text.layers.11.self_attn": {
+   "out": 59.04020309448242
+  },
+  "text.layers.11.post_attention_layernorm": {
+   "out": 73.75940704345703,
+   "in": 59.04020309448242
+  },
+  "text.layers.11.pre_feedforward_layernorm": {
+   "out": 4.805224418640137,
+   "in": 102.5230712890625
+  },
+  "text.layers.11.mlp.gate_proj": {
+   "out": 4.845290184020996
+  },
+  "text.layers.11.mlp.act_fn": {
+   "out": 4.710823059082031
+  },
+  "text.layers.11.mlp.up_proj": {
+   "out": 4.80120849609375
+  },
+  "text.layers.11.mlp.down_proj": {
+   "out": 5.399085998535156
+  },
+  "text.layers.11.mlp": {
+   "out": 5.399085998535156
+  },
+  "text.layers.11.post_feedforward_layernorm": {
+   "out": 25.44614028930664,
+   "in": 5.399085998535156
+  },
+  "text.layers.11.ple_block.per_layer_input_gate": {
+   "out": 6.3436198234558105
+  },
+  "text.layers.11.ple_block.act_fn": {
+   "out": 6.0624284744262695
+  },
+  "text.layers.11.ple_block.per_layer_projection": {
+   "out": 321.4289855957031
+  },
+  "text.layers.11.ple_block.post_per_layer_input_norm": {
+   "out": 13.147993087768555,
+   "in": 321.4289855957031
+  },
+  "text.layers.11.ple_block": {
+   "out": 126.26058959960938
+  },
+  "text.layers.11": {
+   "out": 48.087528228759766
+  },
+  "text.layers.12.input_layernorm": {
+   "out": 40.75633239746094,
+   "in": 48.087528228759766
+  },
+  "text.layers.12.self_attn.q_proj": {
+   "out": 44.27399444580078
+  },
+  "text.layers.12.self_attn.k_proj": {
+   "out": 37.67133331298828
+  },
+  "text.layers.12.self_attn.v_proj": {
+   "out": 51.88386535644531
+  },
+  "text.layers.12.self_attn.q_norm": {
+   "out": 9.64437198638916,
+   "in": 44.27399444580078
+  },
+  "text.layers.12.self_attn.k_norm": {
+   "out": 0.780109703540802,
+   "in": 37.67133331298828
+  },
+  "text.layers.12.self_attn.v_norm": {
+   "out": 11.045221328735352,
+   "in": 51.88386535644531
+  },
+  "text.layers.12.self_attn.o_proj": {
+   "out": 35.96269607543945
+  },
+  "text.layers.12.self_attn": {
+   "out": 35.96269607543945
+  },
+  "text.layers.12.post_attention_layernorm": {
+   "out": 15.148833274841309,
+   "in": 35.96269607543945
+  },
+  "text.layers.12.pre_feedforward_layernorm": {
+   "out": 3.4731979370117188,
+   "in": 62.494781494140625
+  },
+  "text.layers.12.mlp.gate_proj": {
+   "out": 4.404488563537598
+  },
+  "text.layers.12.mlp.act_fn": {
+   "out": 4.404479503631592
+  },
+  "text.layers.12.mlp.up_proj": {
+   "out": 4.192875385284424
+  },
+  "text.layers.12.mlp.down_proj": {
+   "out": 3.5535736083984375
+  },
+  "text.layers.12.mlp": {
+   "out": 3.5535736083984375
+  },
+  "text.layers.12.post_feedforward_layernorm": {
+   "out": 10.41118049621582,
+   "in": 3.5535736083984375
+  },
+  "text.layers.12.ple_block.per_layer_input_gate": {
+   "out": 7.973525524139404
+  },
+  "text.layers.12.ple_block.act_fn": {
+   "out": 5.309049606323242
+  },
+  "text.layers.12.ple_block.per_layer_projection": {
+   "out": 288.29998779296875
+  },
+  "text.layers.12.ple_block.post_per_layer_input_norm": {
+   "out": 3.8509063720703125,
+   "in": 288.29998779296875
+  },
+  "text.layers.12.ple_block": {
+   "out": 69.81053924560547
+  },
+  "text.layers.12": {
+   "out": 53.99408721923828
+  },
+  "text.layers.13.input_layernorm": {
+   "out": 32.258548736572266,
+   "in": 53.99408721923828
+  },
+  "text.layers.13.self_attn.q_proj": {
+   "out": 60.75333023071289
+  },
+  "text.layers.13.self_attn.k_proj": {
+   "out": 26.13103485107422
+  },
+  "text.layers.13.self_attn.v_proj": {
+   "out": 107.29874420166016
+  },
+  "text.layers.13.self_attn.q_norm": {
+   "out": 12.552056312561035,
+   "in": 60.75333023071289
+  },
+  "text.layers.13.self_attn.k_norm": {
+   "out": 0.8084440231323242,
+   "in": 26.13103485107422
+  },
+  "text.layers.13.self_attn.v_norm": {
+   "out": 14.562215805053711,
+   "in": 107.29874420166016
+  },
+  "text.layers.13.self_attn.o_proj": {
+   "out": 46.45123291015625
+  },
+  "text.layers.13.self_attn": {
+   "out": 46.45123291015625
+  },
+  "text.layers.13.post_attention_layernorm": {
+   "out": 12.151741981506348,
+   "in": 46.45123291015625
+  },
+  "text.layers.13.pre_feedforward_layernorm": {
+   "out": 6.765727519989014,
+   "in": 64.89619445800781
+  },
+  "text.layers.13.mlp.gate_proj": {
+   "out": 4.684842586517334
+  },
+  "text.layers.13.mlp.act_fn": {
+   "out": 3.4697163105010986
+  },
+  "text.layers.13.mlp.up_proj": {
+   "out": 3.2187788486480713
+  },
+  "text.layers.13.mlp.down_proj": {
+   "out": 3.236328125
+  },
+  "text.layers.13.mlp": {
+   "out": 3.236328125
+  },
+  "text.layers.13.post_feedforward_layernorm": {
+   "out": 11.670863151550293,
+   "in": 3.236328125
+  },
+  "text.layers.13.ple_block.per_layer_input_gate": {
+   "out": 6.580112457275391
+  },
+  "text.layers.13.ple_block.act_fn": {
+   "out": 6.289553165435791
+  },
+  "text.layers.13.ple_block.per_layer_projection": {
+   "out": 435.74322509765625
+  },
+  "text.layers.13.ple_block.post_per_layer_input_norm": {
+   "out": 5.36035680770874,
+   "in": 435.74322509765625
+  },
+  "text.layers.13.ple_block": {
+   "out": 74.59022521972656
+  },
+  "text.layers.13": {
+   "out": 60.021820068359375
+  },
+  "text.layers.14.input_layernorm": {
+   "out": 36.88741683959961,
+   "in": 60.021820068359375
+  },
+  "text.layers.14.self_attn.q_proj": {
+   "out": 64.96704864501953
+  },
+  "text.layers.14.self_attn.k_proj": {
+   "out": 29.164024353027344
+  },
+  "text.layers.14.self_attn.v_proj": {
+   "out": 79.88345336914062
+  },
+  "text.layers.14.self_attn.q_norm": {
+   "out": 11.041154861450195,
+   "in": 64.96704864501953
+  },
+  "text.layers.14.self_attn.k_norm": {
+   "out": 0.677544891834259,
+   "in": 29.164024353027344
+  },
+  "text.layers.14.self_attn.v_norm": {
+   "out": 14.693345069885254,
+   "in": 79.88345336914062
+  },
+  "text.layers.14.self_attn.o_proj": {
+   "out": 45.29275131225586
+  },
+  "text.layers.14.self_attn": {
+   "out": 45.29275131225586
+  },
+  "text.layers.14.post_attention_layernorm": {
+   "out": 23.782804489135742,
+   "in": 45.29275131225586
+  },
+  "text.layers.14.pre_feedforward_layernorm": {
+   "out": 6.452003479003906,
+   "in": 79.85625457763672
+  },
+  "text.layers.14.mlp.gate_proj": {
+   "out": 4.36245059967041
+  },
+  "text.layers.14.mlp.act_fn": {
+   "out": 4.3624396324157715
+  },
+  "text.layers.14.mlp.up_proj": {
+   "out": 3.476578950881958
+  },
+  "text.layers.14.mlp.down_proj": {
+   "out": 3.5685291290283203
+  },
+  "text.layers.14.mlp": {
+   "out": 3.5685291290283203
+  },
+  "text.layers.14.post_feedforward_layernorm": {
+   "out": 17.62940788269043,
+   "in": 3.5685291290283203
+  },
+  "text.layers.14.ple_block.per_layer_input_gate": {
+   "out": 9.137155532836914
+  },
+  "text.layers.14.ple_block.act_fn": {
+   "out": 9.137155532836914
+  },
+  "text.layers.14.ple_block.per_layer_projection": {
+   "out": 909.10205078125
+  },
+  "text.layers.14.ple_block.post_per_layer_input_norm": {
+   "out": 9.552656173706055,
+   "in": 909.10205078125
+  },
+  "text.layers.14.ple_block": {
+   "out": 95.13032531738281
+  },
+  "text.layers.14": {
+   "out": 47.565162658691406
+  },
+  "text.layers.15.input_layernorm": {
+   "out": 25.37456512451172,
+   "in": 47.565162658691406
+  },
+  "text.layers.15.self_attn.q_proj": {
+   "out": 57.08848571777344
+  },
+  "text.layers.15.self_attn.k_proj": {
+   "out": 24.335988998413086
+  },
+  "text.layers.15.self_attn.v_proj": {
+   "out": 107.38370513916016
+  },
+  "text.layers.15.self_attn.q_norm": {
+   "out": 12.026442527770996,
+   "in": 57.08848571777344
+  },
+  "text.layers.15.self_attn.k_norm": {
+   "out": 0.8691847324371338,
+   "in": 24.335988998413086
+  },
+  "text.layers.15.self_attn.v_norm": {
+   "out": 15.57919692993164,
+   "in": 107.38370513916016
+  },
+  "text.layers.15.self_attn.o_proj": {
+   "out": 28.988344192504883
+  },
+  "text.layers.15.self_attn": {
+   "out": 28.988344192504883
+  },
+  "text.layers.15.post_attention_layernorm": {
+   "out": 4.658442974090576,
+   "in": 28.988344192504883
+  },
+  "text.layers.15.pre_feedforward_layernorm": {
+   "out": 9.963380813598633,
+   "in": 51.73261642456055
+  },
+  "text.layers.15.mlp.gate_proj": {
+   "out": 6.384098052978516
+  },
+  "text.layers.15.mlp.act_fn": {
+   "out": 6.384098052978516
+  },
+  "text.layers.15.mlp.up_proj": {
+   "out": 5.303321361541748
+  },
+  "text.layers.15.mlp.down_proj": {
+   "out": 4.92519998550415
+  },
+  "text.layers.15.mlp": {
+   "out": 4.92519998550415
+  },
+  "text.layers.15.post_feedforward_layernorm": {
+   "out": 22.162641525268555,
+   "in": 4.92519998550415
+  },
+  "text.layers.15.ple_block.per_layer_input_gate": {
+   "out": 10.898929595947266
+  },
+  "text.layers.15.ple_block.act_fn": {
+   "out": 10.898929595947266
+  },
+  "text.layers.15.ple_block.per_layer_projection": {
+   "out": 755.5401000976562
+  },
+  "text.layers.15.ple_block.post_per_layer_input_norm": {
+   "out": 3.9507930278778076,
+   "in": 755.5401000976562
+  },
+  "text.layers.15.ple_block": {
+   "out": 71.9260482788086
+  },
+  "text.layers.15": {
+   "out": 53.101654052734375
+  },
+  "text.layers.16.input_layernorm": {
+   "out": 65.395751953125,
+   "in": 53.101654052734375
+  },
+  "text.layers.16.self_attn.q_proj": {
+   "out": 56.58403778076172
+  },
+  "text.layers.16.self_attn.k_proj": {
+   "out": 40.043312072753906
+  },
+  "text.layers.16.self_attn.v_proj": {
+   "out": 78.35789489746094
+  },
+  "text.layers.16.self_attn.q_norm": {
+   "out": 10.846630096435547,
+   "in": 56.58403778076172
+  },
+  "text.layers.16.self_attn.k_norm": {
+   "out": 0.7929587364196777,
+   "in": 40.043312072753906
+  },
+  "text.layers.16.self_attn.v_norm": {
+   "out": 14.086908340454102,
+   "in": 78.35789489746094
+  },
+  "text.layers.16.self_attn.o_proj": {
+   "out": 45.03704833984375
+  },
+  "text.layers.16.self_attn": {
+   "out": 45.03704833984375
+  },
+  "text.layers.16.post_attention_layernorm": {
+   "out": 101.59556579589844,
+   "in": 45.03704833984375
+  },
+  "text.layers.16.pre_feedforward_layernorm": {
+   "out": 13.300591468811035,
+   "in": 151.0662078857422
+  },
+  "text.layers.16.mlp.gate_proj": {
+   "out": 7.239344596862793
+  },
+  "text.layers.16.mlp.act_fn": {
+   "out": 7.239344596862793
+  },
+  "text.layers.16.mlp.up_proj": {
+   "out": 7.8760199546813965
+  },
+  "text.layers.16.mlp.down_proj": {
+   "out": 15.702140808105469
+  },
+  "text.layers.16.mlp": {
+   "out": 15.702140808105469
+  },
+  "text.layers.16.post_feedforward_layernorm": {
+   "out": 30.952993392944336,
+   "in": 15.702140808105469
+  },
+  "text.layers.16.ple_block.per_layer_input_gate": {
+   "out": 6.6199750900268555
+  },
+  "text.layers.16.ple_block.act_fn": {
+   "out": 6.6199750900268555
+  },
+  "text.layers.16.ple_block.per_layer_projection": {
+   "out": 316.3977966308594
+  },
+  "text.layers.16.ple_block.post_per_layer_input_norm": {
+   "out": 4.586085796356201,
+   "in": 316.3977966308594
+  },
+  "text.layers.16.ple_block": {
+   "out": 178.48753356933594
+  },
+  "text.layers.16": {
+   "out": 64.14395904541016
+  },
+  "text.layers.17.input_layernorm": {
+   "out": 33.40175247192383,
+   "in": 64.14395904541016
+  },
+  "text.layers.17.self_attn.q_proj": {
+   "out": 45.65664291381836
+  },
+  "text.layers.17.self_attn.k_proj": {
+   "out": 39.35877227783203
+  },
+  "text.layers.17.self_attn.v_proj": {
+   "out": 73.88520050048828
+  },
+  "text.layers.17.self_attn.q_norm": {
+   "out": 10.837616920471191,
+   "in": 45.65664291381836
+  },
+  "text.layers.17.self_attn.k_norm": {
+   "out": 0.36080488562583923,
+   "in": 39.35877227783203
+  },
+  "text.layers.17.self_attn.v_norm": {
+   "out": 19.998424530029297,
+   "in": 73.88520050048828
+  },
+  "text.layers.17.self_attn.o_proj": {
+   "out": 13.597843170166016
+  },
+  "text.layers.17.self_attn": {
+   "out": 13.597843170166016
+  },
+  "text.layers.17.post_attention_layernorm": {
+   "out": 2.7532598972320557,
+   "in": 13.597843170166016
+  },
+  "text.layers.17.pre_feedforward_layernorm": {
+   "out": 9.097719192504883,
+   "in": 66.42317962646484
+  },
+  "text.layers.17.mlp.gate_proj": {
+   "out": 6.938477516174316
+  },
+  "text.layers.17.mlp.act_fn": {
+   "out": 6.938477516174316
+  },
+  "text.layers.17.mlp.up_proj": {
+   "out": 6.291877746582031
+  },
+  "text.layers.17.mlp.down_proj": {
+   "out": 16.961999893188477
+  },
+  "text.layers.17.mlp": {
+   "out": 16.961999893188477
+  },
+  "text.layers.17.post_feedforward_layernorm": {
+   "out": 9.815788269042969,
+   "in": 16.961999893188477
+  },
+  "text.layers.17.ple_block.per_layer_input_gate": {
+   "out": 10.462328910827637
+  },
+  "text.layers.17.ple_block.act_fn": {
+   "out": 10.462328910827637
+  },
+  "text.layers.17.ple_block.per_layer_projection": {
+   "out": 841.6344604492188
+  },
+  "text.layers.17.ple_block.post_per_layer_input_norm": {
+   "out": 0.8414384722709656,
+   "in": 841.6344604492188
+  },
+  "text.layers.17.ple_block": {
+   "out": 75.8226547241211
+  },
+  "text.layers.17": {
+   "out": 71.97228240966797
+  },
+  "text.layers.18.input_layernorm": {
+   "out": 67.90243530273438,
+   "in": 71.97228240966797
+  },
+  "text.layers.18.self_attn.q_proj": {
+   "out": 125.87911987304688
+  },
+  "text.layers.18.self_attn.k_proj": {
+   "out": 64.6359634399414
+  },
+  "text.layers.18.self_attn.v_proj": {
+   "out": 244.6457061767578
+  },
+  "text.layers.18.self_attn.q_norm": {
+   "out": 15.776769638061523,
+   "in": 125.87911987304688
+  },
+  "text.layers.18.self_attn.k_norm": {
+   "out": 0.7595456838607788,
+   "in": 64.6359634399414
+  },
+  "text.layers.18.self_attn.v_norm": {
+   "out": 15.634461402893066,
+   "in": 244.6457061767578
+  },
+  "text.layers.18.self_attn.o_proj": {
+   "out": 40.29215621948242
+  },
+  "text.layers.18.self_attn": {
+   "out": 40.29215621948242
+  },
+  "text.layers.18.post_attention_layernorm": {
+   "out": 6.105902194976807,
+   "in": 40.29215621948242
+  },
+  "text.layers.18.pre_feedforward_layernorm": {
+   "out": 9.313488960266113,
+   "in": 77.18882751464844
+  },
+  "text.layers.18.mlp.gate_proj": {
+   "out": 5.18757438659668
+  },
+  "text.layers.18.mlp.act_fn": {
+   "out": 5.18757438659668
+  },
+  "text.layers.18.mlp.up_proj": {
+   "out": 5.908543586730957
+  },
+  "text.layers.18.mlp.down_proj": {
+   "out": 30.435142517089844
+  },
+  "text.layers.18.mlp": {
+   "out": 30.435142517089844
+  },
+  "text.layers.18.post_feedforward_layernorm": {
+   "out": 33.25537872314453,
+   "in": 30.435142517089844
+  },
+  "text.layers.18.ple_block.per_layer_input_gate": {
+   "out": 7.330816745758057
+  },
+  "text.layers.18.ple_block.act_fn": {
+   "out": 7.330816745758057
+  },
+  "text.layers.18.ple_block.per_layer_projection": {
+   "out": 1075.78662109375
+  },
+  "text.layers.18.ple_block.post_per_layer_input_norm": {
+   "out": 1.518864393234253,
+   "in": 1075.78662109375
+  },
+  "text.layers.18.ple_block": {
+   "out": 109.95760345458984
+  },
+  "text.layers.18": {
+   "out": 77.3139419555664
+  },
+  "text.layers.19.input_layernorm": {
+   "out": 39.37305450439453,
+   "in": 77.3139419555664
+  },
+  "text.layers.19.self_attn.q_proj": {
+   "out": 122.42682647705078
+  },
+  "text.layers.19.self_attn.k_proj": {
+   "out": 45.35175323486328
+  },
+  "text.layers.19.self_attn.v_proj": {
+   "out": 202.6755828857422
+  },
+  "text.layers.19.self_attn.q_norm": {
+   "out": 12.276032447814941,
+   "in": 122.42682647705078
+  },
+  "text.layers.19.self_attn.k_norm": {
+   "out": 0.7839015126228333,
+   "in": 45.35175323486328
+  },
+  "text.layers.19.self_attn.v_norm": {
+   "out": 15.8153657913208,
+   "in": 202.6755828857422
+  },
+  "text.layers.19.self_attn.o_proj": {
+   "out": 11.55142593383789
+  },
+  "text.layers.19.self_attn": {
+   "out": 11.55142593383789
+  },
+  "text.layers.19.post_attention_layernorm": {
+   "out": 1.8213800191879272,
+   "in": 11.55142593383789
+  },
+  "text.layers.19.pre_feedforward_layernorm": {
+   "out": 6.027803897857666,
+   "in": 78.6348648071289
+  },
+  "text.layers.19.mlp.gate_proj": {
+   "out": 8.773748397827148
+  },
+  "text.layers.19.mlp.act_fn": {
+   "out": 8.773748397827148
+  },
+  "text.layers.19.mlp.up_proj": {
+   "out": 6.162967205047607
+  },
+  "text.layers.19.mlp.down_proj": {
+   "out": 22.612112045288086
+  },
+  "text.layers.19.mlp": {
+   "out": 22.612112045288086
+  },
+  "text.layers.19.post_feedforward_layernorm": {
+   "out": 3.6065421104431152,
+   "in": 22.612112045288086
+  },
+  "text.layers.19.ple_block.per_layer_input_gate": {
+   "out": 11.049473762512207
+  },
+  "text.layers.19.ple_block.act_fn": {
+   "out": 11.049473762512207
+  },
+  "text.layers.19.ple_block.per_layer_projection": {
+   "out": 806.3781127929688
+  },
+  "text.layers.19.ple_block.post_per_layer_input_norm": {
+   "out": 0.804953396320343,
+   "in": 806.3781127929688
+  },
+  "text.layers.19.ple_block": {
+   "out": 80.7190170288086
+  },
+  "text.layers.19": {
+   "out": 78.19654846191406
+  },
+  "text.layers.20.input_layernorm": {
+   "out": 108.31272888183594,
+   "in": 78.19654846191406
+  },
+  "text.layers.20.self_attn.q_proj": {
+   "out": 137.28506469726562
+  },
+  "text.layers.20.self_attn.k_proj": {
+   "out": 141.44134521484375
+  },
+  "text.layers.20.self_attn.v_proj": {
+   "out": 599.6571655273438
+  },
+  "text.layers.20.self_attn.q_norm": {
+   "out": 13.518519401550293,
+   "in": 137.28506469726562
+  },
+  "text.layers.20.self_attn.k_norm": {
+   "out": 1.0953712463378906,
+   "in": 141.44134521484375
+  },
+  "text.layers.20.self_attn.v_norm": {
+   "out": 15.866018295288086,
+   "in": 599.6571655273438
+  },
+  "text.layers.20.self_attn.o_proj": {
+   "out": 25.481555938720703
+  },
+  "text.layers.20.self_attn": {
+   "out": 25.481555938720703
+  },
+  "text.layers.20.post_attention_layernorm": {
+   "out": 4.143339157104492,
+   "in": 25.481555938720703
+  },
+  "text.layers.20.pre_feedforward_layernorm": {
+   "out": 5.328128337860107,
+   "in": 81.11421203613281
+  },
+  "text.layers.20.mlp.gate_proj": {
+   "out": 5.5900559425354
+  },
+  "text.layers.20.mlp.act_fn": {
+   "out": 5.5900559425354
+  },
+  "text.layers.20.mlp.up_proj": {
+   "out": 5.153364181518555
+  },
+  "text.layers.20.mlp.down_proj": {
+   "out": 20.469341278076172
+  },
+  "text.layers.20.mlp": {
+   "out": 20.469341278076172
+  },
+  "text.layers.20.post_feedforward_layernorm": {
+   "out": 3.029351234436035,
+   "in": 20.469341278076172
+  },
+  "text.layers.20.ple_block.per_layer_input_gate": {
+   "out": 11.392845153808594
+  },
+  "text.layers.20.ple_block.act_fn": {
+   "out": 11.392845153808594
+  },
+  "text.layers.20.ple_block.per_layer_projection": {
+   "out": 1236.017333984375
+  },
+  "text.layers.20.ple_block.post_per_layer_input_norm": {
+   "out": 0.7955566048622131,
+   "in": 1236.017333984375
+  },
+  "text.layers.20.ple_block": {
+   "out": 83.03939056396484
+  },
+  "text.layers.20": {
+   "out": 79.79566192626953
+  },
+  "text.layers.21.input_layernorm": {
+   "out": 113.53060913085938,
+   "in": 79.79566192626953
+  },
+  "text.layers.21.self_attn.q_proj": {
+   "out": 123.54346466064453
+  },
+  "text.layers.21.self_attn.k_proj": {
+   "out": 95.47626495361328
+  },
+  "text.layers.21.self_attn.v_proj": {
+   "out": 284.9019470214844
+  },
+  "text.layers.21.self_attn.q_norm": {
+   "out": 12.717854499816895,
+   "in": 123.54346466064453
+  },
+  "text.layers.21.self_attn.k_norm": {
+   "out": 1.0140494108200073,
+   "in": 95.47626495361328
+  },
+  "text.layers.21.self_attn.v_norm": {
+   "out": 15.576417922973633,
+   "in": 284.9019470214844
+  },
+  "text.layers.21.self_attn.o_proj": {
+   "out": 19.593055725097656
+  },
+  "text.layers.21.self_attn": {
+   "out": 19.593055725097656
+  },
+  "text.layers.21.post_attention_layernorm": {
+   "out": 2.6925485134124756,
+   "in": 19.593055725097656
+  },
+  "text.layers.21.pre_feedforward_layernorm": {
+   "out": 3.2278993129730225,
+   "in": 80.24372100830078
+  },
+  "text.layers.21.mlp.gate_proj": {
+   "out": 4.822729587554932
+  },
+  "text.layers.21.mlp.act_fn": {
+   "out": 4.822729110717773
+  },
+  "text.layers.21.mlp.up_proj": {
+   "out": 4.252777099609375
+  },
+  "text.layers.21.mlp.down_proj": {
+   "out": 14.46584415435791
+  },
+  "text.layers.21.mlp": {
+   "out": 14.46584415435791
+  },
+  "text.layers.21.post_feedforward_layernorm": {
+   "out": 2.9406092166900635,
+   "in": 14.46584415435791
+  },
+  "text.layers.21.ple_block.per_layer_input_gate": {
+   "out": 11.840619087219238
+  },
+  "text.layers.21.ple_block.act_fn": {
+   "out": 11.840619087219238
+  },
+  "text.layers.21.ple_block.per_layer_projection": {
+   "out": 1474.123291015625
+  },
+  "text.layers.21.ple_block.post_per_layer_input_norm": {
+   "out": 1.1535879373550415,
+   "in": 1474.123291015625
+  },
+  "text.layers.21.ple_block": {
+   "out": 81.70370483398438
+  },
+  "text.layers.21": {
+   "out": 77.87384033203125
+  },
+  "text.layers.22.input_layernorm": {
+   "out": 86.22651672363281,
+   "in": 77.87384033203125
+  },
+  "text.layers.22.self_attn.q_proj": {
+   "out": 130.90394592285156
+  },
+  "text.layers.22.self_attn.k_proj": {
+   "out": 98.8264389038086
+  },
+  "text.layers.22.self_attn.v_proj": {
+   "out": 380.76751708984375
+  },
+  "text.layers.22.self_attn.q_norm": {
+   "out": 13.069092750549316,
+   "in": 130.90394592285156
+  },
+  "text.layers.22.self_attn.k_norm": {
+   "out": 1.1405459642410278,
+   "in": 98.8264389038086
+  },
+  "text.layers.22.self_attn.v_norm": {
+   "out": 15.727787971496582,
+   "in": 380.76751708984375
+  },
+  "text.layers.22.self_attn.o_proj": {
+   "out": 21.55767059326172
+  },
+  "text.layers.22.self_attn": {
+   "out": 21.55767059326172
+  },
+  "text.layers.22.post_attention_layernorm": {
+   "out": 2.7523932456970215,
+   "in": 21.55767059326172
+  },
+  "text.layers.22.pre_feedforward_layernorm": {
+   "out": 4.231841087341309,
+   "in": 80.05326843261719
+  },
+  "text.layers.22.mlp.gate_proj": {
+   "out": 5.009430885314941
+  },
+  "text.layers.22.mlp.act_fn": {
+   "out": 5.009430885314941
+  },
+  "text.layers.22.mlp.up_proj": {
+   "out": 6.5913848876953125
+  },
+  "text.layers.22.mlp.down_proj": {
+   "out": 12.390546798706055
+  },
+  "text.layers.22.mlp": {
+   "out": 12.390546798706055
+  },
+  "text.layers.22.post_feedforward_layernorm": {
+   "out": 14.444425582885742,
+   "in": 12.390546798706055
+  },
+  "text.layers.22.ple_block.per_layer_input_gate": {
+   "out": 11.081886291503906
+  },
+  "text.layers.22.ple_block.act_fn": {
+   "out": 11.081886291503906
+  },
+  "text.layers.22.ple_block.per_layer_projection": {
+   "out": 1202.3768310546875
+  },
+  "text.layers.22.ple_block.post_per_layer_input_norm": {
+   "out": 2.102385997772217,
+   "in": 1202.3768310546875
+  },
+  "text.layers.22.ple_block": {
+   "out": 86.31089782714844
+  },
+  "text.layers.22": {
+   "out": 75.18488311767578
+  },
+  "text.layers.23.input_layernorm": {
+   "out": 80.78205108642578,
+   "in": 75.18488311767578
+  },
+  "text.layers.23.self_attn.q_proj": {
+   "out": 149.7119140625
+  },
+  "text.layers.23.self_attn.k_proj": {
+   "out": 62.08761978149414
+  },
+  "text.layers.23.self_attn.v_proj": {
+   "out": 254.71414184570312
+  },
+  "text.layers.23.self_attn.q_norm": {
+   "out": 12.345799446105957,
+   "in": 149.7119140625
+  },
+  "text.layers.23.self_attn.k_norm": {
+   "out": 0.4088501036167145,
+   "in": 62.08761978149414
+  },
+  "text.layers.23.self_attn.v_norm": {
+   "out": 22.28434181213379,
+   "in": 254.71414184570312
+  },
+  "text.layers.23.self_attn.o_proj": {
+   "out": 10.947210311889648
+  },
+  "text.layers.23.self_attn": {
+   "out": 10.947210311889648
+  },
+  "text.layers.23.post_attention_layernorm": {
+   "out": 7.379687309265137,
+   "in": 10.947210311889648
+  },
+  "text.layers.23.pre_feedforward_layernorm": {
+   "out": 13.535929679870605,
+   "in": 80.68901824951172
+  },
+  "text.layers.23.mlp.gate_proj": {
+   "out": 6.453289985656738
+  },
+  "text.layers.23.mlp.act_fn": {
+   "out": 6.453289985656738
+  },
+  "text.layers.23.mlp.up_proj": {
+   "out": 6.638936519622803
+  },
+  "text.layers.23.mlp.down_proj": {
+   "out": 16.072011947631836
+  },
+  "text.layers.23.mlp": {
+   "out": 16.072011947631836
+  },
+  "text.layers.23.post_feedforward_layernorm": {
+   "out": 392.7702331542969,
+   "in": 16.072011947631836
+  },
+  "text.layers.23.ple_block.per_layer_input_gate": {
+   "out": 2.0654547214508057
+  },
+  "text.layers.23.ple_block.act_fn": {
+   "out": 1.8203736543655396
+  },
+  "text.layers.23.ple_block.per_layer_projection": {
+   "out": 216.3747100830078
+  },
+  "text.layers.23.ple_block.post_per_layer_input_norm": {
+   "out": 2.394049644470215,
+   "in": 216.3747100830078
+  },
+  "text.layers.23.ple_block": {
+   "out": 459.9311828613281
+  },
+  "text.layers.23": {
+   "out": 52.775306701660156
+  },
+  "text.norm": {
+   "out": 93.42076110839844,
+   "in": 52.775306701660156
+  },
+  "text.embedding_projection": {
+   "out": 3806.1513671875
+  },
+  "text.": {
+   "out": 3806.1513671875
+  }
+ }
+}
