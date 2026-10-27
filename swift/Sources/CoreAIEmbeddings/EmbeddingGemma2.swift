@@ -419,6 +419,7 @@ public enum EmbeddingError: Error, CustomStringConvertible {
     case imagesUnsupported
     case videoUnsupported
     case noFrames
+    case unsupportedCodec(String)
     case audioUnsupported
     case audioDecodingFailed
     case imageDecodingFailed
@@ -433,6 +434,7 @@ public enum EmbeddingError: Error, CustomStringConvertible {
         case .imageDecodingFailed: "could not read the image pixels"
         case .videoUnsupported: "this .aimodel has no video-frame functions (export with --image-budgets 2520,1260)"
         case .noFrames: "the video produced no frames"
+        case .unsupportedCodec(let codec): "this Mac cannot decode '\(codec)' video; convert it to H.264 or HEVC"
         case .audioUnsupported: "this .aimodel has no audio function long enough (export with --modalities ...,audio)"
         case .audioDecodingFailed: "could not read audio samples"
         }
