@@ -266,6 +266,28 @@ struct VideoReference: Decodable {
             #expect(total / Double(count) < 3, "\(item.stem): mean |diff| \(total / Double(count))")
         }
     }
+
+    /// Seeking to the sampled timestamps returns the frames a full front-to-back decode keeps.
+    /// `EMBEDDINGGEMMA2_VIDEOS` (colon-separated paths) adds real clips to the fixtures.
+    @Test func seekMatchesFullDecode() async throws {
+        let extra = ProcessInfo.processInfo.environment["EMBEDDINGGEMMA2_VIDEOS"]?.split(separator: ":").map {
+            URL(filePath: String($0))
+        } ?? []
+        let urls = try VideoReference.load().items.map { VideoReference.url($0.stem) } + extra
+        for url in urls {
+            let seek = try await GemmaVideoSampler.frames(from: url, mode: .seekOnly)
+            let full = try await GemmaVideoSampler.frames(from: url, mode: .decodeAll)
+            #expect(seek.count == full.count, "\(url.lastPathComponent): \(seek.count) vs \(full.count) frames")
+            for (k, (a, b)) in zip(seek, full).enumerated() {
+                let pa = try GemmaImageProcessor.rgbPixels(a).pixels, pb = try GemmaImageProcessor.rgbPixels(b).pixels
+                #expect(pa.count == pb.count, "\(url.lastPathComponent) frame \(k): size")
+                var total = 0.0
+                for i in 0..<min(pa.count, pb.count) { total += Double(abs(Int(pa[i]) - Int(pb[i]))) }
+                let mean = total / Double(max(1, pa.count))
+                #expect(mean < 1, "\(url.lastPathComponent) frame \(k): mean |diff| \(mean)")
+            }
+        }
+    }
 }
 
 @Suite(.enabled(if: modelURL != nil && tokenizerFolder != nil, "set EMBEDDINGGEMMA2_MODEL to an exported .aimodel"))
